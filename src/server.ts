@@ -2,6 +2,9 @@ import { app } from './app';
 import { env } from './config/env';
 import { prisma } from './config/prisma';
 import { logger } from './utils/logger';
+import { initSentry } from './config/sentry';
+
+initSentry();
 
 const server = app.listen(env.PORT, () => {
   logger.info(`🚀 GearUp API running on port ${env.PORT} in ${env.NODE_ENV} mode`);

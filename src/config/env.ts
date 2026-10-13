@@ -26,7 +26,9 @@ const envSchema = z.object({
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
 
   JWT_SECRET: z.string().min(10, 'JWT_SECRET must be at least 10 characters'),
-  JWT_EXPIRES_IN: z.string().default('7d'),
+  JWT_EXPIRES_IN: z.string().default('15m'),
+  JWT_REFRESH_EXPIRES_IN_DAYS: z.coerce.number().int().positive().default(30),
+  REQUIRE_EMAIL_VERIFICATION: booleanish.default(false),
 
   BCRYPT_SALT_ROUNDS: z.coerce.number().default(12),
 
@@ -41,6 +43,25 @@ const envSchema = z.object({
   SSLCOMMERZ_STORE_PASSWORD: z.string().optional(),
   SSLCOMMERZ_IS_LIVE: booleanish.default(false),
   APP_BASE_URL: z.string().default('http://localhost:5000'),
+
+  // Optional — when SMTP_HOST is unset the mailer uses a JSON transport
+  // that captures messages in the logs instead of sending them, so local
+  // dev and tests never require a real mail server.
+  SMTP_HOST: z.string().optional(),
+  SMTP_PORT: z.coerce.number().default(587),
+  SMTP_SECURE: booleanish.default(false),
+  SMTP_USER: z.string().optional(),
+  SMTP_PASSWORD: z.string().optional(),
+  MAIL_FROM: z.string().default('GearUp <no-reply@gearup.local>'),
+
+  // Optional — when set, rate limiting uses a Redis store so limits are
+  // shared across instances; otherwise an in-memory store is used.
+  REDIS_URL: z.string().optional(),
+  SENTRY_DSN: z.string().optional(),
+
+  RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(15 * 60 * 1000),
+  RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
+  AUTH_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(10),
 });
 
 const parsed = envSchema.safeParse(process.env);

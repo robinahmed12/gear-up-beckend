@@ -30,7 +30,7 @@ export const verifyTokenMiddleware = catchAsync(
 
     const user = await prisma.user.findUnique({
       where: { id: decoded.id },
-      select: { id: true, role: true, status: true },
+      select: { id: true, role: true, status: true, emailVerifiedAt: true },
     });
 
     if (!user) {
@@ -41,7 +41,7 @@ export const verifyTokenMiddleware = catchAsync(
       throw new UnauthorizedError('Your account has been suspended. Contact support.');
     }
 
-    req.user = { id: user.id, role: user.role };
+    req.user = { id: user.id, role: user.role, emailVerifiedAt: user.emailVerifiedAt };
     next();
   },
 );

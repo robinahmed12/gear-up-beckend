@@ -2,10 +2,15 @@ import express, { Application, NextFunction, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
+import swaggerUi from 'swagger-ui-express';
 import { env } from './config/env';
+import { prisma } from './config/prisma';
 import { notFoundHandler } from './middlewares/notFound.middleware';
 import { globalErrorHandler } from './middlewares/error.middleware';
+import { requestIdMiddleware } from './middlewares/requestId.middleware';
+import { generalRateLimiter } from './middlewares/rateLimit.middleware';
 import { sendSuccess } from './utils/ApiResponse';
+import { openApiDocument } from './docs/openapi';
 
 import authRoutes from './modules/auth/auth.routes';
 import gearRoutes from './modules/gear/gear.routes.js';
@@ -26,6 +31,7 @@ import paymentWebhookRoutes from './modules/payments/payment.webhook.js';
 export const app: Application = express();
 
 // --- Global middleware ---
+app.use(requestIdMiddleware);
 app.use(helmet());
 
 const allowedOrigins = env.CORS_ORIGIN;
@@ -48,14 +54,16 @@ app.use(morgan(env.NODE_ENV === 'development' ? 'dev' : 'combined'));
  * Stripe's webhook route needs the raw request body to verify the
  * signature, so it's mounted BEFORE express.json() with its own
  * express.raw() middleware — everything else in the app parses JSON
- * normally.
+ * normally. It is also intentionally mounted before the global rate
+ * limiter so Stripe's retries are never throttled.
  */
 app.use('/api/payments/webhook', express.raw({ type: 'application/json' }), paymentWebhookRoutes);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(generalRateLimiter);
 
-// --- Health check ---
+// --- Health checks ---
 app.get('/', (_req: Request, res: Response) => {
   sendSuccess(res, { message: 'GearUp API is up and running', data: { uptime: process.uptime() } });
 });
@@ -65,6 +73,19 @@ app.get('/api/health', (_req: Request, res: Response) => {
     message: 'GearUp API is healthy',
     data: { status: 'ok', uptime: process.uptime() },
   });
+});
+
+app.get('/api/health/ready', async (_req: Request, res: Response) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    sendSuccess(res, { message: 'GearUp API is ready', data: { status: 'ready' } });
+  } catch {
+    res.status(503).json({
+      success: false,
+      message: 'Service is not ready',
+      errorDetails: null,
+    });
+  }
 });
 
 // --- Feature routes ---
@@ -84,6 +105,10 @@ app.use('/api/admin/categories', adminCategoryRoutes);
 app.use('/api/admin/rentals', adminRentalRoutes);
 app.use('/api/admin/payments', adminPaymentRoutes);
 app.use('/api/admin/gear', adminGearRoutes);
+
+// --- API docs ---
+app.get('/api/docs.json', (_req: Request, res: Response) => res.json(openApiDocument));
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openApiDocument));
 
 // --- 404 + global error handler (must be registered last, in this order) ---
 app.use(notFoundHandler);

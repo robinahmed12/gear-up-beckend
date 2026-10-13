@@ -87,9 +87,9 @@ Confirmed by reading the repository on 2026-10-13.
 - [x] No `GET /api/health` (README references it)
 - [x] No `.env.example`
 - [x] README inaccuracies (review update/delete recalc; stock timing)
-- [ ] No tests, CI, Docker, or OpenAPI
-- [ ] No rate limiting
-- [ ] No account lifecycle (refresh token, logout, email verify, password reset)
+- [x] No tests, CI, Docker, or OpenAPI — **addressed in Phase 1** (Vitest harness, GitHub Actions, Dockerfile/compose, OpenAPI at `/api/docs`)
+- [x] No rate limiting — **addressed in Phase 1** (`PLAT-4`: Redis-backed, stricter on auth)
+- [x] No account lifecycle (refresh token, logout, email verify, password reset) — **addressed in Phase 1** (AUTH-1..3)
 - [ ] Availability is stock-only (no date-range conflict detection)
 - [ ] No refunds, deposits, payouts, commission, ledger
 - [ ] Hardcoded `currency:'usd'`; `PaymentStatus.REFUNDED` never set
@@ -263,38 +263,38 @@ abstraction (SMTP via Nodemailer); add Sentry.
 
 **Tasks**
 
-- [ ] PLAT-1: add Vitest + `supertest` + Testcontainers (Postgres) harness; `npm test` script
-- [ ] PLAT-2: GitHub Actions workflow (install, generate, type-check, lint, test, build)
-- [ ] PLAT-3: multi-stage `Dockerfile` + `docker-compose.yml` (api, postgres, redis)
-- [ ] AUTH-1: `Session`/`RefreshToken` model + migration; issue refresh on login; `refresh`/`logout`/`logout-all` endpoints; rotate on refresh
-- [ ] AUTH-1: shorten access-token TTL; keep DB re-fetch on protected routes
-- [ ] AUTH-2: `VerificationToken` (EMAIL_VERIFY) + verify/resend endpoints; gate transacting on `emailVerifiedAt`
-- [ ] AUTH-3: `VerificationToken` (PASSWORD_RESET) + forgot/reset endpoints; invalidate sessions on reset
-- [ ] NOTIF-1: Nodemailer/SMTP abstraction + templates (verify, reset, order events)
-- [ ] PLAT-4: rate limiting middleware (Redis-backed; stricter on auth/payment)
-- [ ] PLAT-5: request-ID middleware; Sentry wiring in error middleware; `GET /api/health/ready` (DB check)
-- [ ] PLAT-6: derive OpenAPI 3 from Zod schemas; serve Swagger UI at `/api/docs`
-- [ ] AUTH-4: `AuditLog` model + helper; log privileged actions (role/suspend/config)
+- [x] PLAT-1: add Vitest + `supertest` + Testcontainers (Postgres) harness; `npm test` script
+- [x] PLAT-2: GitHub Actions workflow (install, generate, type-check, lint, test, build)
+- [x] PLAT-3: multi-stage `Dockerfile` + `docker-compose.yml` (api, postgres, redis)
+- [x] AUTH-1: `Session`/`RefreshToken` model + migration; issue refresh on login; `refresh`/`logout`/`logout-all` endpoints; rotate on refresh
+- [x] AUTH-1: shorten access-token TTL; keep DB re-fetch on protected routes
+- [x] AUTH-2: `VerificationToken` (EMAIL_VERIFY) + verify/resend endpoints; gate transacting on `emailVerifiedAt`
+- [x] AUTH-3: `VerificationToken` (PASSWORD_RESET) + forgot/reset endpoints; invalidate sessions on reset
+- [~] NOTIF-1: Nodemailer/SMTP abstraction + templates (verify + reset done; order-event templates pending)
+- [x] PLAT-4: rate limiting middleware (Redis-backed; stricter on auth/payment)
+- [x] PLAT-5: request-ID middleware; Sentry wiring in error middleware; `GET /api/health/ready` (DB check)
+- [x] PLAT-6: derive OpenAPI 3 from Zod schemas; serve Swagger UI at `/api/docs`
+- [~] AUTH-4: `AuditLog` model + helper (done); logging wired for auth events — privileged admin actions pending
 
 **Testing requirements**
 
-- [ ] Unit: token/session lifecycle (issue, rotate, revoke, expiry)
-- [ ] Integration: full auth flows (register→verify→login→refresh→logout→reset)
-- [ ] Integration: rate limiter returns 429 past threshold
-- [ ] Integration: readiness probe reflects DB connectivity
+- [~] Unit: token/session lifecycle (issue, rotate, revoke, expiry) — covered by integration; dedicated unit tests pending
+- [x] Integration: full auth flows (register→verify→login→refresh→logout→reset)
+- [~] Integration: rate limiter returns 429 past threshold — verified manually via compose; automated test pending
+- [~] Integration: readiness probe reflects DB connectivity — verified manually via compose; automated test pending
 - [ ] Integration: audit entries written for privileged actions
-- [ ] Contract: OpenAPI schema generation succeeds and matches routes
+- [x] Contract: OpenAPI schema generation succeeds and matches routes
 
 **Acceptance criteria**
 
-- [ ] All new auth endpoints covered by passing integration tests
-- [ ] Login returns a short access token + rotating refresh token
-- [ ] Revoked/rotated refresh tokens are rejected; reset invalidates sessions
-- [ ] Unverified users cannot create orders/payments
-- [ ] Auth endpoints rate-limited; 429 returned under load
-- [ ] Every response carries `x-request-id`; 5xx errors appear in Sentry
-- [ ] CI green on PR; Docker compose brings up api+db+redis locally
-- [ ] `/api/docs` renders generated OpenAPI
+- [x] All new auth endpoints covered by passing integration tests
+- [x] Login returns a short access token + rotating refresh token
+- [x] Revoked/rotated refresh tokens are rejected; reset invalidates sessions
+- [x] Unverified users cannot create orders/payments
+- [x] Auth endpoints rate-limited; 429 returned under load
+- [~] Every response carries `x-request-id`; 5xx errors appear in Sentry — middleware wired; live Sentry DSN unverified
+- [~] CI green on PR; Docker compose brings up api+db+redis locally — compose verified locally; CI pending first push
+- [x] `/api/docs` renders generated OpenAPI
 
 **Validation commands**
 
@@ -576,7 +576,7 @@ Update marks as work proceeds.
 | Phase | Objective | Status |
 |---|---|---|
 | 0 | Stabilize (bug/config fixes) | `[x]` |
-| 1 | Harden (tests, CI, auth, observability) | `[ ]` |
+| 1 | Harden (tests, CI, auth, observability) | `[~]` |
 | 2 | Booking & money correctness | `[ ]` |
 | 3 | Monetization (payouts, ledger, commission) | `[ ]` |
 | 4 | Scale & revenue expansion | `[ ]` |
@@ -584,7 +584,7 @@ Update marks as work proceeds.
 ### 7.1 Milestone gates
 
 - [x] **M0:** Phase 0 complete; build/type/lint green; health endpoint live
-- [ ] **M1:** Phase 1 complete; CI green; auth lifecycle + rate limit + Sentry
+- [~] **M1:** test harness + GitHub Actions workflow + Docker/Redis + auth lifecycle + rate limiting + request IDs + Sentry wiring + OpenAPI done and verified locally. Pending before M1 is fully met: first green CI run on GitHub, live Sentry DSN confirmation, order-event email templates, admin audit logging, dedicated token unit tests.
 - [ ] **M2:** Phase 2 complete; no double-booking; refunds/deposits/idempotency
 - [ ] **M3:** Phase 3 complete; payouts + ledger reconcile; KYC gating enforced
 - [ ] **M4:** Phase 4 complete; caching/uploads/subscriptions/roles
@@ -634,6 +634,7 @@ commission rate/model, deposit model, payout cadence, KYC approach (see
 | Version | Date | Notes |
 |---|---|---|
 | 1.0 | 2026-10-13 | Initial phased implementation plan from verified baseline + PRD + architecture |
+| 1.1 | 2026-10-13 | Phase 1 (Harden) implemented and locally verified: test harness, CI workflow, Docker/compose, auth lifecycle (refresh/verify/reset), Redis-backed rate limiting, request IDs + Sentry wiring, OpenAPI/Swagger, audit foundation |
 
 ---
 

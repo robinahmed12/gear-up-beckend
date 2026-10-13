@@ -2,6 +2,7 @@ import { Router } from 'express';
 import * as rentalController from './rental.controller.js';
 import { validate } from '../../middlewares/validate.middleware.js';
 import { verifyTokenMiddleware } from '../../middlewares/auth.middleware.js';
+import { requireVerifiedEmail } from '../../middlewares/requireVerifiedEmail.middleware.js';
 import { verifyRole } from '../../middlewares/role.middleware.js';
 import { Role } from '../../constants/roles.js';
 import { createRentalSchema, rentalIdParamSchema, rentalQuerySchema } from './rental.validation.js';
@@ -11,7 +12,13 @@ const router = Router();
 router.use(verifyTokenMiddleware);
 
 
-router.post('/', verifyRole(Role.CUSTOMER), validate(createRentalSchema), rentalController.create);
+router.post(
+  '/',
+  verifyRole(Role.CUSTOMER),
+  requireVerifiedEmail,
+  validate(createRentalSchema),
+  rentalController.create,
+);
 // rental get route 
 router.get(
   '/',

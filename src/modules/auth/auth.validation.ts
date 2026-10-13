@@ -66,3 +66,32 @@ export type RegisterInput = z.infer<typeof registerSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+
+export const refreshTokenSchema = z.object({
+  refreshToken: z.string({ required_error: 'refreshToken is required' }).min(1),
+});
+
+export const tokenSchema = z.object({
+  token: z.string({ required_error: 'token is required' }).min(1),
+});
+
+export const forgotPasswordSchema = z.object({
+  email: z
+    .string({ required_error: 'Email is required' })
+    .trim()
+    .toLowerCase()
+    .email('Must be a valid email address'),
+});
+
+export const resetPasswordSchema = z.object({
+  token: z.string({ required_error: 'token is required' }).min(1),
+  newPassword: z
+    .string({ required_error: 'newPassword is required' })
+    .min(8, 'Password must be at least 8 characters')
+    .max(72, 'Password must be under 72 characters'),
+});
+
+export type RefreshTokenInput = z.infer<typeof refreshTokenSchema>;
+export type TokenInput = z.infer<typeof tokenSchema>;
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;

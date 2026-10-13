@@ -53,6 +53,11 @@ enum PaymentMethod {
   SSLCOMMERZ
 }
 
+enum VerificationTokenType {
+  EMAIL_VERIFY
+  PASSWORD_RESET
+}
+
 // ─────────────────────────────────────────────────────────────
 // Models
 // ─────────────────────────────────────────────────────────────
@@ -65,6 +70,7 @@ model User {
   role      Role
   status    UserStatus @default(ACTIVE)
   phone     String?
+  emailVerifiedAt DateTime?
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
 
@@ -74,6 +80,10 @@ model User {
   gearItems    Gear[]        @relation("ProviderGear")
   rentalOrders RentalOrder[] @relation("CustomerRentals")
   reviews      Review[]
+
+  sessions           Session[]
+  verificationTokens VerificationToken[]
+  auditLogs          AuditLog[]
 
   // Frequent filters in the admin panel: "all suspended users",
   // "all providers", etc.
@@ -228,4 +238,60 @@ model Review {
   @@unique([customerId, gearId])
   @@index([gearId])
   @@map("reviews")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Auth lifecycle, audit
+// ─────────────────────────────────────────────────────────────
+
+model Session {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Only a SHA-256 hash of the refresh token is stored — a leaked DB row
+  // cannot be replayed as a live credential.
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  userAgent String?
+  ip        String?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model VerificationToken {
+  id        String                @id @default(uuid())
+  userId    String
+  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      VerificationTokenType
+  tokenHash String                @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime              @default(now())
+
+  @@index([userId, type])
+  @@index([expiresAt])
+  @@map("verification_tokens")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  action    String
+  entity    String
+  entityId  String?
+  metadata  Json?
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([actorId])
+  @@index([action])
+  @@index([entity, entityId])
+  @@index([createdAt])
+  @@map("audit_logs")
 }

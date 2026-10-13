@@ -4,6 +4,7 @@ import { ZodError } from 'zod';
 import { AppError } from '../errors/AppError';
 import { env } from '../config/env';
 import { logger } from '../utils/logger';
+import { captureException } from '../config/sentry';
 
 interface ErrorPayload {
   success: false;
@@ -62,10 +63,12 @@ export const globalErrorHandler = (
   }
 
   // Log full detail server-side regardless of what we expose to the client.
+  const requestId = req.id ? ` [${req.id}]` : '';
   if (statusCode >= 500) {
-    logger.error(`${req.method} ${req.originalUrl} - ${message}`, { error: err });
+    logger.error(`${req.method} ${req.originalUrl}${requestId} - ${message}`, { error: err });
+    captureException(err);
   } else {
-    logger.warn(`${req.method} ${req.originalUrl} - ${message}`);
+    logger.warn(`${req.method} ${req.originalUrl}${requestId} - ${message}`);
   }
 
   const payload: ErrorPayload = {
