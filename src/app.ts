@@ -27,10 +27,19 @@ export const app: Application = express();
 
 // --- Global middleware ---
 app.use(helmet());
+
+const allowedOrigins = env.CORS_ORIGIN;
+const allowAllOrigins = allowedOrigins.includes('*');
+
 app.use(
   cors({
-    origin: env.CORS_ORIGIN,
-    credentials: true,
+    origin: (origin, callback) => {
+      if (!origin || allowAllOrigins || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(null, false);
+    },
+    credentials: !allowAllOrigins,
   }),
 );
 app.use(morgan(env.NODE_ENV === 'development' ? 'dev' : 'combined'));
@@ -49,6 +58,13 @@ app.use(express.urlencoded({ extended: true }));
 // --- Health check ---
 app.get('/', (_req: Request, res: Response) => {
   sendSuccess(res, { message: 'GearUp API is up and running', data: { uptime: process.uptime() } });
+});
+
+app.get('/api/health', (_req: Request, res: Response) => {
+  sendSuccess(res, {
+    message: 'GearUp API is healthy',
+    data: { status: 'ok', uptime: process.uptime() },
+  });
 });
 
 // --- Feature routes ---

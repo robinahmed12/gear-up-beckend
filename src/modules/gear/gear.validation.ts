@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { booleanish } from '../../utils/booleanSchema.js';
 
 const uuid = z.string().uuid('Must be a valid UUID');
 
@@ -14,7 +15,7 @@ export const createGearSchema = z.object({
     .int('stock must be a whole number')
     .nonnegative('stock cannot be negative')
     .default(1),
-  isAvailable: z.coerce.boolean().default(true),
+  isAvailable: booleanish.default(true),
   images: z.array(z.string().url('Each image must be a valid URL')).max(10).optional().default([]),
   categoryId: uuid,
 });
@@ -36,7 +37,7 @@ const gearQueryBaseSchema = z.object({
   categoryId: uuid.optional(),
   minPrice: z.coerce.number().nonnegative().optional(),
   maxPrice: z.coerce.number().nonnegative().optional(),
-  isAvailable: z.coerce.boolean().optional(),
+  isAvailable: booleanish.optional(),
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(10),
   sortBy: z.enum(['price', 'rating', 'newest']).default('newest'),

@@ -1,5 +1,6 @@
 import dotenv from 'dotenv';
 import { z } from 'zod';
+import { booleanish } from '../utils/booleanSchema.js';
 
 dotenv.config();
 
@@ -12,7 +13,15 @@ dotenv.config();
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().default(5000),
-  CORS_ORIGIN: z.string().default('*'),
+  CORS_ORIGIN: z
+    .string()
+    .default('http://localhost:3000,http://localhost:5173')
+    .transform((value) =>
+      value
+        .split(',')
+        .map((origin) => origin.trim())
+        .filter((origin) => origin.length > 0),
+    ),
 
   DATABASE_URL: z.string().min(1, 'DATABASE_URL is required'),
 
@@ -30,7 +39,7 @@ const envSchema = z.object({
   // clear error, until they're configured.
   SSLCOMMERZ_STORE_ID: z.string().optional(),
   SSLCOMMERZ_STORE_PASSWORD: z.string().optional(),
-  SSLCOMMERZ_IS_LIVE: z.coerce.boolean().default(false),
+  SSLCOMMERZ_IS_LIVE: booleanish.default(false),
   APP_BASE_URL: z.string().default('http://localhost:5000'),
 });
 

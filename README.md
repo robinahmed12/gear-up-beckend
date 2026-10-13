@@ -31,7 +31,7 @@ Prisma v7 introduces major architectural changes:
 - **Client output** — generated into `src/generated/prisma` (gitignored). Run `npm run prisma:generate` after cloning.  
 - **Datasource config** — moved to `prisma.config.ts` at project root.  
 - **ESM runtime** — project runs as an ES module (`"type": "module"`) using `tsx`.  
-  - Trade-off: Slight startup overhead vs compiled builds. For production optimization, swap in `tsup` or `esbuild` later without code changes.
+  - Trade-off: Slight startup overhead vs compiled builds. The project already builds with `tsup` (`npm run build`) for production.
 
 ---
 
@@ -62,7 +62,9 @@ Change these before any real deployment — the seed script is for local/dev con
 | Command | Purpose |
 |---|---|
 | `npm run dev` | Start dev server with hot reload (`tsx watch`) |
-| `npm start` | Run the server the same way, without watch (used in production) |
+| `npm start` | Run the compiled server (`node dist/server.js`) — used in production |
+| `npm run build` | Bundle to `dist/` with `tsup` |
+| `npm test` | Run the test suite (Vitest) |
 | `npm run type-check` | `tsc --noEmit` — catches type errors without emitting files |
 | `npm run prisma:generate` | Regenerate Prisma client after schema changes |
 | `npm run prisma:migrate` | Create + apply a dev migration |
@@ -231,8 +233,8 @@ PLACED ──confirm──▶ CONFIRMED ──(payment)──▶ PAID ──pick
 - Ownership check in the service layer: a customer can only cancel/view their own orders; a provider can only manage/view orders on gear they own. `GET /api/rentals/:id` is shared by both roles — the service decides access, not the route.
 
 
-- Reviews module recalculates `Gear.averageRating`/`reviewCount` on every create/update/delete.
-- Rentals module reduces `Gear.stock` on order confirmation and restores it on cancellation/return.
+- Reviews module recalculates `Gear.averageRating`/`reviewCount` when a review is created. (Editing and deleting reviews are not implemented yet.)
+- Rentals module reduces `Gear.stock` when an order is **created**, and restores it on cancellation/return.
 
 ## Phase 5 — Admin Module
 

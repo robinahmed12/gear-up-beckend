@@ -82,11 +82,11 @@ Confirmed by reading the repository on 2026-10-13.
 
 ### 1.3 Known gaps / PARTIAL (verified)
 
-- [ ] CORS default `origin:'*'` + `credentials:true` (invalid) — `src/app.ts`, `src/config/env.ts`
-- [ ] `z.coerce.boolean()` coerces `"false"` -> `true` — `src/config/env.ts`, `src/modules/gear/gear.validation.ts`
-- [ ] No `GET /api/health` (README references it)
-- [ ] No `.env.example`
-- [ ] README inaccuracies (review update/delete recalc; stock timing)
+- [x] CORS default `origin:'*'` + `credentials:true` (invalid) — `src/app.ts`, `src/config/env.ts`
+- [x] `z.coerce.boolean()` coerces `"false"` -> `true` — `src/config/env.ts`, `src/modules/gear/gear.validation.ts`
+- [x] No `GET /api/health` (README references it)
+- [x] No `.env.example`
+- [x] README inaccuracies (review update/delete recalc; stock timing)
 - [ ] No tests, CI, Docker, or OpenAPI
 - [ ] No rate limiting
 - [ ] No account lifecycle (refresh token, logout, email verify, password reset)
@@ -203,28 +203,28 @@ with credentials.
 
 **Tasks**
 
-- [ ] FIX: CORS — replace wildcard with `CORS_ORIGIN` allowlist; split dev/prod defaults (`src/config/env.ts`, `src/app.ts`)
-- [ ] FIX: env boolean parsing — replace `z.coerce.boolean()` with an explicit `"true"/"false"` transform (`src/config/env.ts`)
-- [ ] FIX: gear boolean query validation — same explicit boolean handling (`src/modules/gear/gear.validation.ts`)
-- [ ] ADD: `GET /api/health` returning `{ success, message, data: { status, uptime } }` (`src/app.ts`)
-- [ ] ADD: `.env.example` with every required var (no secrets)
-- [ ] FIX: README inaccuracies (health route, review lifecycle, stock timing)
-- [ ] VERIFY: build + type-check + lint pass
+- [x] FIX: CORS — replace wildcard with `CORS_ORIGIN` allowlist; split dev/prod defaults (`src/config/env.ts`, `src/app.ts`)
+- [x] FIX: env boolean parsing — replace `z.coerce.boolean()` with an explicit `"true"/"false"` transform (`src/config/env.ts`)
+- [x] FIX: gear boolean query validation — same explicit boolean handling (`src/modules/gear/gear.validation.ts`)
+- [x] ADD: `GET /api/health` returning `{ success, message, data: { status, uptime } }` (`src/app.ts`)
+- [x] ADD: `.env.example` with every required var (no secrets)
+- [x] FIX: README inaccuracies (health route, review lifecycle, stock timing)
+- [x] VERIFY: build + type-check + lint pass
 
 **Testing requirements**
 
-- [ ] Unit: boolean schema accepts `"true"`/`"false"` and rejects others
-- [ ] Integration: `GET /api/health` returns 200 and expected shape
-- [ ] Config: CORS rejects a disallowed origin in production mode
+- [x] Unit: boolean schema accepts `"true"`/`"false"` and rejects others
+- [x] Integration: `GET /api/health` returns 200 and expected shape
+- [x] Config: CORS rejects a disallowed origin in production mode
 
 **Acceptance criteria**
 
-- [ ] `GET /api/health` returns 200 with the documented shape
-- [ ] CORS reflects only allowlisted origins; no `*` with credentials
-- [ ] `isAvailable=false` query correctly filters (no `"false"` -> `true`)
-- [ ] `.env.example` lists all required vars; app boots from a copy of it
-- [ ] README matches actual behavior
-- [ ] `npm run build && npm run type-check && npm run lint` pass
+- [x] `GET /api/health` returns 200 with the documented shape
+- [x] CORS reflects only allowlisted origins; no `*` with credentials
+- [x] `isAvailable=false` query correctly filters (no `"false"` -> `true`)
+- [x] `.env.example` lists all required vars; app boots from a copy of it
+- [x] README matches actual behavior
+- [x] `npm run build && npm run type-check && npm run lint` pass
 
 **Validation commands**
 
@@ -575,7 +575,7 @@ Update marks as work proceeds.
 
 | Phase | Objective | Status |
 |---|---|---|
-| 0 | Stabilize (bug/config fixes) | `[ ]` |
+| 0 | Stabilize (bug/config fixes) | `[x]` |
 | 1 | Harden (tests, CI, auth, observability) | `[ ]` |
 | 2 | Booking & money correctness | `[ ]` |
 | 3 | Monetization (payouts, ledger, commission) | `[ ]` |
@@ -583,7 +583,7 @@ Update marks as work proceeds.
 
 ### 7.1 Milestone gates
 
-- [ ] **M0:** Phase 0 complete; build/type/lint green; health endpoint live
+- [x] **M0:** Phase 0 complete; build/type/lint green; health endpoint live
 - [ ] **M1:** Phase 1 complete; CI green; auth lifecycle + rate limit + Sentry
 - [ ] **M2:** Phase 2 complete; no double-booking; refunds/deposits/idempotency
 - [ ] **M3:** Phase 3 complete; payouts + ledger reconcile; KYC gating enforced
