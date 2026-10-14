@@ -87,6 +87,11 @@ export type GearAvailabilityBlock = Prisma.GearAvailabilityBlockModel
  */
 export type Session = Prisma.SessionModel
 /**
+ * Model IdempotencyKey
+ * 
+ */
+export type IdempotencyKey = Prisma.IdempotencyKeyModel
+/**
  * Model VerificationToken
  * 
  */

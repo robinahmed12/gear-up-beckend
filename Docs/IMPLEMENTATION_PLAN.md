@@ -357,7 +357,7 @@ extend `payments`; add idempotency helper.
 - [x] RENT-3: `GET /rentals/:id/breakdown` (owner/admin scoped)
 
 **2C — Idempotency**
-- [ ] PAY-3: `IdempotencyKey` model + middleware on `POST /rentals` and `POST /payments/create` (replay; `409` on body mismatch)
+- [x] PAY-3: `IdempotencyKey` model + middleware on `POST /rentals` and `POST /payments/create` (replay; `409` on body mismatch)
 
 **2D — Deposits & refunds**
 - [ ] PAY-1: deposit authorize at booking (manual capture) + release on clean return; capture on damage
@@ -378,7 +378,7 @@ extend `payments`; add idempotency helper.
 
 - [x] (2A) Unit: overlap detection (adjacent, exact, nested ranges)
 - [x] (2B) Unit: pricing breakdown math and rounding (Decimal)
-- [ ] (2C) Unit/Integration: idempotency replay returns identical response, no double effect
+- [x] (2C) Unit/Integration: idempotency replay returns identical response, no double effect
 - [x] (2A) Integration: concurrent booking attempts — exactly one succeeds per window
 - [ ] (2D) Integration: deposit authorize → release; damage → capture
 - [ ] (2D) Integration: refund (full/partial) updates payment + order consistently
@@ -667,6 +667,7 @@ commission rate/model, deposit model, payout cadence, KYC approach (see
 | 1.2 | 2026-10-14 | Phase 2 split into sub-phases 2A–2F; decisions recorded (Stripe Tax last, advisory xact lock for availability, global env fee/deposit defaults) |
 | 1.3 | 2026-10-14 | Sub-phase 2A complete: `GearAvailabilityBlock` + migration, half-open `rangesOverlap` util, `GET /gear/:id/availability`, provider block CRUD, advisory-lock overlap check in `createRentalOrder` (global stock counter retired); unit + integration tests green |
 | 1.4 | 2026-10-14 | Sub-phase 2B complete: `OrderLineItem` + order breakdown columns (`subtotal`/`serviceFee`/`depositAmount`/`taxAmount`/`currency`) and `Payment.currency` (additive migration + backfill), Decimal-safe `pricing` util from `PLATFORM_FEE_PERCENT`/`DEPOSIT_PERCENT`, configurable `CURRENCY` (removed hardcoded `usd`), `GET /rentals/:id/breakdown`; unit + integration tests green |
+| 1.5 | 2026-10-14 | Sub-phase 2C complete: `IdempotencyKey` model + opt-in `Idempotency-Key` middleware on `POST /rentals` and `POST /payments/create` (replay with `Idempotency-Replayed` header, `409` on body mismatch or in-flight duplicate, releases key on 5xx); deterministic body hashing; unit + integration tests green |
 
 ---
 

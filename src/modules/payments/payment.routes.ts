@@ -5,6 +5,7 @@ import { verifyTokenMiddleware } from '../../middlewares/auth.middleware.js';
 import { verifyRole } from '../../middlewares/role.middleware.js';
 import { requireVerifiedEmail } from '../../middlewares/requireVerifiedEmail.middleware.js';
 import { Role } from '../../constants/roles.js';
+import { idempotency } from '../../middlewares/idempotency.middleware.js';
 import {
   createPaymentSchema,
   paymentIdParamSchema,
@@ -21,6 +22,7 @@ router.post(
   '/create',
   requireVerifiedEmail,
   validate(createPaymentSchema),
+  idempotency(),
   paymentController.create,
 );
 router.get('/', validate(paymentQuerySchema, 'query'), paymentController.listOwn);

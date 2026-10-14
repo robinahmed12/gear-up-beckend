@@ -3,6 +3,7 @@ import * as rentalController from './rental.controller.js';
 import { validate } from '../../middlewares/validate.middleware.js';
 import { verifyTokenMiddleware } from '../../middlewares/auth.middleware.js';
 import { requireVerifiedEmail } from '../../middlewares/requireVerifiedEmail.middleware.js';
+import { idempotency } from '../../middlewares/idempotency.middleware.js';
 import { verifyRole } from '../../middlewares/role.middleware.js';
 import { Role } from '../../constants/roles.js';
 import { createRentalSchema, rentalIdParamSchema, rentalQuerySchema } from './rental.validation.js';
@@ -17,6 +18,7 @@ router.post(
   verifyRole(Role.CUSTOMER),
   requireVerifiedEmail,
   validate(createRentalSchema),
+  idempotency(),
   rentalController.create,
 );
 // rental get route 

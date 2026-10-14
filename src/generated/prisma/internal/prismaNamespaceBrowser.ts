@@ -60,6 +60,7 @@ export const ModelName = {
   Review: 'Review',
   GearAvailabilityBlock: 'GearAvailabilityBlock',
   Session: 'Session',
+  IdempotencyKey: 'IdempotencyKey',
   VerificationToken: 'VerificationToken',
   AuditLog: 'AuditLog'
 } as const
@@ -219,6 +220,21 @@ export const SessionScalarFieldEnum = {
 } as const
 
 export type SessionScalarFieldEnum = (typeof SessionScalarFieldEnum)[keyof typeof SessionScalarFieldEnum]
+
+
+export const IdempotencyKeyScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  key: 'key',
+  scope: 'scope',
+  requestHash: 'requestHash',
+  statusCode: 'statusCode',
+  responseBody: 'responseBody',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type IdempotencyKeyScalarFieldEnum = (typeof IdempotencyKeyScalarFieldEnum)[keyof typeof IdempotencyKeyScalarFieldEnum]
 
 
 export const VerificationTokenScalarFieldEnum = {

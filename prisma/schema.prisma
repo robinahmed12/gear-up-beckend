@@ -95,6 +95,7 @@ model User {
   reviews      Review[]
 
   sessions           Session[]
+  idempotencyKeys    IdempotencyKey[]
   verificationTokens VerificationToken[]
   auditLogs          AuditLog[]
 
@@ -339,6 +340,31 @@ model Session {
   @@index([userId])
   @@index([expiresAt])
   @@map("sessions")
+}
+
+model IdempotencyKey {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  // Client-supplied `Idempotency-Key` header value, unique per user.
+  key       String
+  // Route identity (`METHOD /path`) the key was first used on — recorded for
+  // debugging; the uniqueness scope is the user + key.
+  scope     String
+  // SHA-256 of the normalized request body, so a retry with the same key but
+  // a different payload is rejected instead of silently replaying the wrong
+  // response.
+  requestHash String
+  // The captured outcome, written once the handler responds. Null while the
+  // first request is still in flight (a concurrent duplicate gets a 409).
+  statusCode   Int?
+  responseBody Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([userId, key])
+  @@index([createdAt])
+  @@map("idempotency_keys")
 }
 
 model VerificationToken {
