@@ -41,8 +41,9 @@ export type RentalStatus = (typeof RentalStatus)[keyof typeof RentalStatus]
 export const PaymentStatus = {
   PENDING: 'PENDING',
   COMPLETED: 'COMPLETED',
-  FAILED: 'FAILED',
-  REFUNDED: 'REFUNDED'
+  PARTIALLY_REFUNDED: 'PARTIALLY_REFUNDED',
+  REFUNDED: 'REFUNDED',
+  FAILED: 'FAILED'
 } as const
 
 export type PaymentStatus = (typeof PaymentStatus)[keyof typeof PaymentStatus]
@@ -76,3 +77,23 @@ export const OrderLineItemType = {
 } as const
 
 export type OrderLineItemType = (typeof OrderLineItemType)[keyof typeof OrderLineItemType]
+
+
+export const DepositStatus = {
+  PENDING: 'PENDING',
+  AUTHORIZED: 'AUTHORIZED',
+  RELEASED: 'RELEASED',
+  CAPTURED: 'CAPTURED',
+  FAILED: 'FAILED'
+} as const
+
+export type DepositStatus = (typeof DepositStatus)[keyof typeof DepositStatus]
+
+
+export const RefundStatus = {
+  PENDING: 'PENDING',
+  SUCCEEDED: 'SUCCEEDED',
+  FAILED: 'FAILED'
+} as const
+
+export type RefundStatus = (typeof RefundStatus)[keyof typeof RefundStatus]

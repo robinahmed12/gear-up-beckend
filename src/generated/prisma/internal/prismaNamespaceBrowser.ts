@@ -57,6 +57,8 @@ export const ModelName = {
   RentalOrder: 'RentalOrder',
   Payment: 'Payment',
   OrderLineItem: 'OrderLineItem',
+  Deposit: 'Deposit',
+  Refund: 'Refund',
   Review: 'Review',
   GearAvailabilityBlock: 'GearAvailabilityBlock',
   Session: 'Session',
@@ -179,6 +181,41 @@ export const OrderLineItemScalarFieldEnum = {
 } as const
 
 export type OrderLineItemScalarFieldEnum = (typeof OrderLineItemScalarFieldEnum)[keyof typeof OrderLineItemScalarFieldEnum]
+
+
+export const DepositScalarFieldEnum = {
+  id: 'id',
+  rentalOrderId: 'rentalOrderId',
+  amount: 'amount',
+  currency: 'currency',
+  status: 'status',
+  stripePaymentIntentId: 'stripePaymentIntentId',
+  authorizedAt: 'authorizedAt',
+  releasedAt: 'releasedAt',
+  capturedAt: 'capturedAt',
+  capturedAmount: 'capturedAmount',
+  rawResponse: 'rawResponse',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type DepositScalarFieldEnum = (typeof DepositScalarFieldEnum)[keyof typeof DepositScalarFieldEnum]
+
+
+export const RefundScalarFieldEnum = {
+  id: 'id',
+  paymentId: 'paymentId',
+  amount: 'amount',
+  currency: 'currency',
+  reason: 'reason',
+  status: 'status',
+  stripeRefundId: 'stripeRefundId',
+  rawResponse: 'rawResponse',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type RefundScalarFieldEnum = (typeof RefundScalarFieldEnum)[keyof typeof RefundScalarFieldEnum]
 
 
 export const ReviewScalarFieldEnum = {

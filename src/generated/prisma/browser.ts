@@ -48,6 +48,16 @@ export type Payment = Prisma.PaymentModel
  */
 export type OrderLineItem = Prisma.OrderLineItemModel
 /**
+ * Model Deposit
+ * 
+ */
+export type Deposit = Prisma.DepositModel
+/**
+ * Model Refund
+ * 
+ */
+export type Refund = Prisma.RefundModel
+/**
  * Model Review
  * 
  */

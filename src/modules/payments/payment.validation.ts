@@ -23,5 +23,27 @@ export const createPaymentSchema = z.object({
   method: z.nativeEnum(PaymentMethod).default(PaymentMethod.STRIPE),
 });
 
+// Admin: full or partial refund against a captured payment. `amount` is
+// optional — omit it to refund the remaining balance.
+export const refundSchema = z.object({
+  paymentId: uuid,
+  amount: z.coerce.number().positive('amount must be greater than 0').optional(),
+  reason: z.string().trim().min(1).max(500).optional(),
+});
+
+// Deposit management is keyed by the order it belongs to.
+export const depositOrderSchema = z.object({
+  rentalOrderId: uuid,
+});
+
+export const captureDepositSchema = depositOrderSchema.extend({
+  amount: z.coerce.number().positive().optional(),
+  reason: z.string().trim().min(1).max(500).optional(),
+});
+
 export type PaymentQueryInput = z.infer<typeof paymentQuerySchema>;
 export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
+export type RefundInput = z.infer<typeof refundSchema>;
+export type DepositOrderInput = z.infer<typeof depositOrderSchema>;
+export type CaptureDepositInput = z.infer<typeof captureDepositSchema>;
+

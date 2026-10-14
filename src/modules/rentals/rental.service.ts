@@ -10,6 +10,8 @@ import {
   buildOrderLineItems,
 } from '../../utils/pricing.js';
 import { env } from '../../config/env.js';
+import { logger } from '../../utils/logger.js';
+import * as depositService from '../payments/deposit.service.js';
 import {
   acquireGearBookingLock,
   assertGearAvailable,
@@ -304,11 +306,26 @@ export const updateOrderStatus = async (
   // No stock counter to touch: availability is derived from the statuses of
   // date-scoped orders (see RESERVING_STATUSES). Once an order leaves the
   // reserving set (RETURNED/CANCELLED), its window is automatically freed.
-  return prisma.rentalOrder.update({
+  const updated = await prisma.rentalOrder.update({
     where: { id: orderId },
     data: { status: input.status },
     select: rentalSelect,
   });
+
+  // A clean return voids any security-deposit hold. Best-effort: a Stripe
+  // hiccup must never block marking the gear returned, so we log and move on
+  // (the release can be retried via the admin deposit endpoint).
+  if (input.status === RentalStatus.RETURNED) {
+    try {
+      await depositService.releaseDepositForOrder(orderId);
+    } catch (err) {
+      logger.warn(
+        `Failed to release security deposit for order ${orderId}: ${(err as Error).message}`,
+      );
+    }
+  }
+
+  return updated;
 };
 
 /**

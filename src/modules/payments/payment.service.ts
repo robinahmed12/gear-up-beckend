@@ -1,4 +1,4 @@
-import { Prisma, PaymentMethod, PaymentStatus } from '../../generated/prisma/client.js';
+import { Prisma, PaymentMethod, PaymentStatus, DepositStatus } from '../../generated/prisma/client.js';
 import Stripe from 'stripe';
 import { prisma } from '../../config/prisma.js';
 import { stripe } from '../../config/stripe.js';
@@ -12,7 +12,9 @@ import {
   buildPaginationMeta,
   PaginationMeta,
 } from '../../utils/pagination.js';
+import { toMinorUnits } from '../../utils/money.js';
 import * as rentalService from '../rentals/rental.service.js';
+import { depositSelect } from './deposit.service.js';
 import { PaymentQueryInput, CreatePaymentInput } from './payment.validation.js';
 
 // Admin oversight (list/view every payment) lives alongside customer-facing
@@ -135,8 +137,7 @@ export const getPaymentByIdForCustomer = async (id: string, customerId: string) 
 // Create payment (Stripe)
 // ─────────────────────────────────────────────────────────────
 
-const centsFromDecimal = (amount: Prisma.Decimal | number): number =>
-  Math.round(Number(amount) * 100);
+const centsFromDecimal = (amount: Prisma.Decimal | number): number => toMinorUnits(amount);
 
 /**
  * Creates a Stripe PaymentIntent for a CONFIRMED rental order and
@@ -145,6 +146,11 @@ const centsFromDecimal = (amount: Prisma.Decimal | number): number =>
  * retry after a failed/abandoned attempt updates the existing row
  * in-place with a fresh PaymentIntent rather than inserting a second
  * one — trying to `create` twice would hit a unique-constraint error.
+ *
+ * The security deposit is *not* part of this charge. When the order has a
+ * deposit, it's held on the card separately with a manual-capture
+ * PaymentIntent (see deposit.service) so it can be voided on a clean
+ * return without ever moving collected money.
  */
 export const createStripePayment = async (customerId: string, input: CreatePaymentInput) => {
   if (input.method !== PaymentMethod.STRIPE) {
@@ -161,6 +167,7 @@ export const createStripePayment = async (customerId: string, input: CreatePayme
       customerId: true,
       status: true,
       totalAmount: true,
+      depositAmount: true,
       currency: true,
       customer: { select: { name: true, email: true } },
       gear: { select: { title: true } },
@@ -190,17 +197,24 @@ export const createStripePayment = async (customerId: string, input: CreatePayme
   // stored uppercase for display, so normalize here rather than hardcoding.
   const currency = order.currency.toLowerCase();
 
+  // The deposit is authorized separately, so only the rest is charged now.
+  const chargeAmount = order.totalAmount.minus(order.depositAmount);
+
+  if (chargeAmount.lte(0)) {
+    throw new AppError('This order has no payable amount to charge.', 400);
+  }
+
   const paymentIntent = await stripe.paymentIntents.create({
-    amount: centsFromDecimal(order.totalAmount),
+    amount: centsFromDecimal(chargeAmount),
     currency,
     receipt_email: order.customer.email,
     description: `GearUp rental — ${order.gear.title}`,
-    metadata: { rentalOrderId: order.id, customerId },
+    metadata: { rentalOrderId: order.id, customerId, kind: 'rental_charge' },
   });
 
   const data = {
     transactionId: paymentIntent.id,
-    amount: order.totalAmount,
+    amount: chargeAmount,
     currency: order.currency,
     method: PaymentMethod.STRIPE,
     status: PaymentStatus.PENDING,
@@ -217,7 +231,51 @@ export const createStripePayment = async (customerId: string, input: CreatePayme
         select: paymentSelect,
       });
 
-  return { payment, clientSecret: paymentIntent.client_secret };
+  let deposit:
+    | { id: string; amount: Prisma.Decimal; currency: string; status: DepositStatus; clientSecret: string | null }
+    | undefined;
+
+  if (order.depositAmount.gt(0)) {
+    const depositIntent = await stripe.paymentIntents.create({
+      amount: centsFromDecimal(order.depositAmount),
+      currency,
+      capture_method: 'manual',
+      description: `GearUp security deposit — ${order.gear.title}`,
+      metadata: { rentalOrderId: order.id, customerId, kind: 'security_deposit' },
+    });
+
+    const depositRow = await prisma.deposit.upsert({
+      where: { rentalOrderId: order.id },
+      create: {
+        rentalOrderId: order.id,
+        amount: order.depositAmount,
+        currency: order.currency,
+        status: DepositStatus.PENDING,
+        stripePaymentIntentId: depositIntent.id,
+      },
+      update: {
+        amount: order.depositAmount,
+        currency: order.currency,
+        status: DepositStatus.PENDING,
+        stripePaymentIntentId: depositIntent.id,
+        authorizedAt: null,
+        releasedAt: null,
+        capturedAt: null,
+        capturedAmount: null,
+      },
+      select: depositSelect,
+    });
+
+    deposit = {
+      id: depositRow.id,
+      amount: depositRow.amount,
+      currency: depositRow.currency,
+      status: depositRow.status,
+      clientSecret: depositIntent.client_secret,
+    };
+  }
+
+  return { payment, clientSecret: paymentIntent.client_secret, deposit };
 };
 
 // ─────────────────────────────────────────────────────────────

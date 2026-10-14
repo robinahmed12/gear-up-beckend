@@ -18,6 +18,11 @@ import {
   availabilityQuerySchema,
 } from '../modules/availability/availability.validation';
 import { rentalIdParamSchema } from '../modules/rentals/rental.validation';
+import {
+  refundSchema,
+  depositOrderSchema,
+  captureDepositSchema,
+} from '../modules/payments/payment.validation';
 
 extendZodWithOpenApi(z);
 
@@ -196,6 +201,53 @@ registry.registerPath({
     ...errorResponses,
     403: jsonResponse(errorResponse, 'Not your order'),
     404: jsonResponse(errorResponse, 'Rental order not found'),
+  },
+});
+
+registry.registerPath({
+  method: 'post',
+  path: '/api/payments/refund',
+  tags: ['Payments'],
+  summary: 'Issue a full or partial refund against a captured payment (admin)',
+  security: [{ bearerAuth: [] }],
+  request: { body: jsonBody(refundSchema) },
+  responses: {
+    201: jsonResponse(successResponse, 'Refund issued'),
+    ...errorResponses,
+    403: jsonResponse(errorResponse, 'Admin role required'),
+    404: jsonResponse(errorResponse, 'Payment not found'),
+    409: jsonResponse(errorResponse, 'Payment is not in a refundable state'),
+  },
+});
+
+registry.registerPath({
+  method: 'post',
+  path: '/api/payments/deposit/capture',
+  tags: ['Payments'],
+  summary: 'Capture (part of) a held security deposit for damage/late fees (admin)',
+  security: [{ bearerAuth: [] }],
+  request: { body: jsonBody(captureDepositSchema) },
+  responses: {
+    200: jsonResponse(successResponse, 'Deposit captured'),
+    ...errorResponses,
+    403: jsonResponse(errorResponse, 'Admin role required'),
+    404: jsonResponse(errorResponse, 'No security deposit for this order'),
+    409: jsonResponse(errorResponse, 'Deposit is not capturable'),
+  },
+});
+
+registry.registerPath({
+  method: 'post',
+  path: '/api/payments/deposit/release',
+  tags: ['Payments'],
+  summary: 'Release (void) a held security deposit on a clean return (admin)',
+  security: [{ bearerAuth: [] }],
+  request: { body: jsonBody(depositOrderSchema) },
+  responses: {
+    200: jsonResponse(successResponse, 'Deposit released'),
+    ...errorResponses,
+    403: jsonResponse(errorResponse, 'Admin role required'),
+    404: jsonResponse(errorResponse, 'No security deposit for this order'),
   },
 });
 

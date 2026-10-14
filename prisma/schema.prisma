@@ -41,8 +41,9 @@ enum RentalStatus {
 enum PaymentStatus {
   PENDING
   COMPLETED
-  FAILED
+  PARTIALLY_REFUNDED
   REFUNDED
+  FAILED
 }
 
 // Not one of the four mandatory enums, but modeling it as an enum
@@ -69,6 +70,26 @@ enum OrderLineItemType {
   LATE_FEE
   REFUND
   ADJUSTMENT
+}
+
+// Lifecycle of a security-deposit authorization (Stripe manual capture):
+//   PENDING    -> PaymentIntent created, awaiting client confirmation
+//   AUTHORIZED -> funds held on the card (requires_capture), not charged
+//   RELEASED   -> hold voided on a clean return (no capture)
+//   CAPTURED   -> (partially) captured to cover damage/late fees
+//   FAILED     -> authorization attempt failed
+enum DepositStatus {
+  PENDING
+  AUTHORIZED
+  RELEASED
+  CAPTURED
+  FAILED
+}
+
+enum RefundStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -212,6 +233,7 @@ model RentalOrder {
   payment Payment?
   review  Review?
   lineItems OrderLineItem[]
+  deposit   Deposit?
   // Itemized audit/display trail mirroring the breakdown columns above.
   // The columns are the source of truth for totals; line items exist so the
   // customer (and support) can see how the total was composed, and so later
@@ -244,6 +266,7 @@ model Payment {
 
   rentalOrderId String      @unique
   rentalOrder   RentalOrder @relation(fields: [rentalOrderId], references: [id], onDelete: Cascade)
+  refunds       Refund[]
   // Cascade: a Payment record has no independent meaning without its
   // order — if the order is ever purged, its payment record should go
   // with it (in practice orders are never hard-deleted, only cancelled).
@@ -268,6 +291,52 @@ model OrderLineItem {
 
   @@index([rentalOrderId])
   @@map("order_line_items")
+}
+
+// Security deposit held on the customer's card via Stripe manual capture.
+// One per order. The hold is independent of the rental charge (the charge
+// excludes the deposit), so releasing it never touches collected funds.
+model Deposit {
+  id            String        @id @default(uuid())
+  rentalOrderId String        @unique
+  rentalOrder   RentalOrder   @relation(fields: [rentalOrderId], references: [id], onDelete: Cascade)
+  amount        Decimal       @db.Decimal(10, 2)
+  currency      String        @default("USD")
+  status        DepositStatus @default(PENDING)
+  // Stripe PaymentIntent id for the (manual-capture) authorization.
+  stripePaymentIntentId String? @unique
+  authorizedAt  DateTime?
+  releasedAt    DateTime?
+  capturedAt    DateTime?
+  // How much of the hold was actually captured for damage/late fees; the
+  // remainder of the authorization is released by Stripe automatically.
+  capturedAmount Decimal?     @db.Decimal(10, 2)
+  rawResponse   Json?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([status])
+  @@map("deposits")
+}
+
+// Full or partial refund against a captured Payment. Records every refund
+// Stripe reports so `charge.refunded` reconciliation is idempotent via the
+// unique Stripe refund id.
+model Refund {
+  id             String       @id @default(uuid())
+  paymentId      String
+  payment        Payment      @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  amount         Decimal      @db.Decimal(10, 2)
+  currency       String       @default("USD")
+  reason         String?
+  status         RefundStatus @default(PENDING)
+  stripeRefundId String?      @unique
+  rawResponse    Json?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([paymentId])
+  @@map("refunds")
 }
 
 model Review {

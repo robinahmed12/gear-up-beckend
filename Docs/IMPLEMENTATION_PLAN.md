@@ -340,6 +340,12 @@ extend `payments`; add idempotency helper.
   `gearId` inside the booking transaction.
 - Platform fee and deposit are **global env defaults**
   (`PLATFORM_FEE_PERCENT`, `DEPOSIT_PERCENT`); per-gear overrides deferred.
+- Platform fee and deposit are **global env defaults**
+  (`PLATFORM_FEE_PERCENT`, `DEPOSIT_PERCENT`); per-gear overrides deferred.
+- Security deposit is held with a **separate Stripe manual-capture
+  PaymentIntent** (authorize, not charge); the rental charge excludes the
+  deposit. Released (voided) on a clean return, captured (partly) on damage.
+  Refunds are admin-issued, server-priced, and idempotent.
 - Plan doc updated before coding; one commit per sub-phase.
 
 **Sub-phases**
@@ -360,9 +366,9 @@ extend `payments`; add idempotency helper.
 - [x] PAY-3: `IdempotencyKey` model + middleware on `POST /rentals` and `POST /payments/create` (replay; `409` on body mismatch)
 
 **2D — Deposits & refunds**
-- [ ] PAY-1: deposit authorize at booking (manual capture) + release on clean return; capture on damage
-- [ ] PAY-2: refund service (full/partial) + Stripe `charge.refunded` webhook; set `REFUNDED`/`PARTIALLY_REFUNDED`
-- [ ] PAY-5: damage/late fees recorded as line items
+- [x] PAY-1: deposit authorize at booking (manual capture) + release on clean return; capture on damage
+- [x] PAY-2: refund service (full/partial) + Stripe `charge.refunded` webhook; set `REFUNDED`/`PARTIALLY_REFUNDED`
+- [x] PAY-5: damage/late fees recorded as line items
 
 **2E — Cancellation policy & status timing**
 - [ ] RENT-4: extend transitions (provider-cancel, admin-override, cancel from `CONFIRMED`/`PAID` per policy)
@@ -380,10 +386,10 @@ extend `payments`; add idempotency helper.
 - [x] (2B) Unit: pricing breakdown math and rounding (Decimal)
 - [x] (2C) Unit/Integration: idempotency replay returns identical response, no double effect
 - [x] (2A) Integration: concurrent booking attempts — exactly one succeeds per window
-- [ ] (2D) Integration: deposit authorize → release; damage → capture
-- [ ] (2D) Integration: refund (full/partial) updates payment + order consistently
-- [ ] (2D) Integration: `charge.refunded` webhook idempotent (no double refund)
-- [ ] (2A/2D) Stripe interactions mocked in tests (no live key required)
+- [x] (2D) Integration: deposit authorize → release; damage → capture
+- [x] (2D) Integration: refund (full/partial) updates payment + order consistently
+- [x] (2D) Integration: `charge.refunded` webhook idempotent (no double refund)
+- [x] (2A/2D) Stripe interactions mocked in tests (no live key required)
 
 **Acceptance criteria**
 
@@ -668,6 +674,7 @@ commission rate/model, deposit model, payout cadence, KYC approach (see
 | 1.3 | 2026-10-14 | Sub-phase 2A complete: `GearAvailabilityBlock` + migration, half-open `rangesOverlap` util, `GET /gear/:id/availability`, provider block CRUD, advisory-lock overlap check in `createRentalOrder` (global stock counter retired); unit + integration tests green |
 | 1.4 | 2026-10-14 | Sub-phase 2B complete: `OrderLineItem` + order breakdown columns (`subtotal`/`serviceFee`/`depositAmount`/`taxAmount`/`currency`) and `Payment.currency` (additive migration + backfill), Decimal-safe `pricing` util from `PLATFORM_FEE_PERCENT`/`DEPOSIT_PERCENT`, configurable `CURRENCY` (removed hardcoded `usd`), `GET /rentals/:id/breakdown`; unit + integration tests green |
 | 1.5 | 2026-10-14 | Sub-phase 2C complete: `IdempotencyKey` model + opt-in `Idempotency-Key` middleware on `POST /rentals` and `POST /payments/create` (replay with `Idempotency-Replayed` header, `409` on body mismatch or in-flight duplicate, releases key on 5xx); deterministic body hashing; unit + integration tests green |
+| 1.6 | 2026-10-14 | Sub-phase 2D complete: `Deposit` + `Refund` models and `DepositStatus`/`RefundStatus` enums + `PaymentStatus.PARTIALLY_REFUNDED` (additive migration). Deposit held via Stripe manual capture (rental charge excludes deposit); released on clean return, captured (partially) on damage with a `DAMAGE_FEE` line item. Admin `POST /payments/refund` (full/partial, server-derived amounts, idempotent) + idempotent `charge.refunded` reconciliation; unit + integration tests green (Stripe mocked) |
 
 ---
 

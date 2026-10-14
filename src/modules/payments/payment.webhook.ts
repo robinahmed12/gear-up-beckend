@@ -5,6 +5,8 @@ import { env } from '../../config/env.js';
 import { catchAsync } from '../../utils/catchAsync.js';
 import { logger } from '../../utils/logger.js';
 import * as paymentService from './payment.service.js';
+import * as depositService from './deposit.service.js';
+import * as refundService from './refund.service.js';
 
 const router = Router();
 
@@ -52,6 +54,15 @@ router.post(
         break;
       case 'payment_intent.payment_failed':
         await paymentService.handleStripePaymentFailed(event.data.object as Stripe.PaymentIntent);
+        break;
+      // A manual-capture deposit hold becomes capturable once the customer's
+      // card is authorized (funds held, not charged).
+      case 'payment_intent.amount_capturable_updated':
+        await depositService.markDepositAuthorized(event.data.object as Stripe.PaymentIntent);
+        break;
+      // Reconcile refunds (ours or dashboard-issued); idempotent by refund id.
+      case 'charge.refunded':
+        await refundService.handleChargeRefunded(event.data.object as Stripe.Charge);
         break;
       default:
         // Unhandled events are acknowledged but logged for visibility
