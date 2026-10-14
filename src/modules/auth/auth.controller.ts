@@ -12,10 +12,7 @@ const sessionMeta = (req: Request): SessionMeta => ({
 
 // register user
 export const register = catchAsync(async (req: Request, res: Response) => {
-  const { user, token, refreshToken } = await authService.registerUser(
-    req.body,
-    sessionMeta(req),
-  );
+  const { user, token, refreshToken } = await authService.registerUser(req.body, sessionMeta(req));
 
   sendSuccess(res, {
     statusCode: 201,

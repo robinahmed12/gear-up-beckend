@@ -324,7 +324,9 @@ refunds webhook, idempotency keys, currency config, tax/invoices.
 **API changes:**
 `GET /gear/:id/availability`, `POST/DELETE /gear/:id/blocks`,
 `GET /orders/:id/breakdown`, `POST /payments/refund` (admin/provider per policy),
-`POST /orders` accepts `Idempotency-Key`.
+`POST /orders` accepts `Idempotency-Key`,
+`PATCH /rentals/:id/cancel` (customer) / `PATCH /provider/orders/:id/cancel`
+(provider) / `PATCH /admin/rentals/:id/status` (admin override).
 
 **Security changes:** restrict refunds by policy + ownership; validate money
 boundaries; ensure no client-controlled amounts.
@@ -340,8 +342,14 @@ extend `payments`; add idempotency helper.
   `gearId` inside the booking transaction.
 - Platform fee and deposit are **global env defaults**
   (`PLATFORM_FEE_PERCENT`, `DEPOSIT_PERCENT`); per-gear overrides deferred.
-- Platform fee and deposit are **global env defaults**
-  (`PLATFORM_FEE_PERCENT`, `DEPOSIT_PERCENT`); per-gear overrides deferred.
+- Cancellation refunds are **time-tiered** and env-configurable: a full
+  charge refund when cancelling at least `CANCELLATION_FULL_REFUND_HOURS`
+  before the start date, otherwise `CANCELLATION_PARTIAL_REFUND_PERCENT`%
+  of the charge, and nothing once the rental has started. The security
+  deposit hold is always released on cancel/return. Provider- and
+  admin-initiated cancellations always refund the full charge. Customers
+  (own orders), providers (orders on their gear) and admins (override) may
+  cancel.
 - Security deposit is held with a **separate Stripe manual-capture
   PaymentIntent** (authorize, not charge); the rental charge excludes the
   deposit. Released (voided) on a clean return, captured (partly) on damage.
@@ -371,8 +379,8 @@ extend `payments`; add idempotency helper.
 - [x] PAY-5: damage/late fees recorded as line items
 
 **2E — Cancellation policy & status timing**
-- [ ] RENT-4: extend transitions (provider-cancel, admin-override, cancel from `CONFIRMED`/`PAID` per policy)
-- [ ] RENT-5: date-aware release of reservation + deposit on cancel/return (replaces blunt stock increment)
+- [x] RENT-4: extend transitions (provider-cancel, admin-override, cancel from `CONFIRMED`/`PAID` per policy)
+- [x] RENT-5: date-aware release of reservation + deposit on cancel/return (replaces blunt stock increment)
 
 **2F — Tax & invoices (last)**
 - [ ] PAY-4: Stripe Tax on the charge + emailed receipt; tax persisted as a line item
@@ -390,12 +398,15 @@ extend `payments`; add idempotency helper.
 - [x] (2D) Integration: refund (full/partial) updates payment + order consistently
 - [x] (2D) Integration: `charge.refunded` webhook idempotent (no double refund)
 - [x] (2A/2D) Stripe interactions mocked in tests (no live key required)
+- [x] (2E) Unit: cancellation refund tiers (full/partial/none) incl. boundaries
+- [x] (2E) Integration: customer cancel refunds per policy + releases deposit
+- [x] (2E) Integration: provider/admin cancel always refunds in full
 
 **Acceptance criteria**
 
 - [ ] No double-booking for overlapping windows under concurrent load
 - [ ] Order totals itemized and reproducible; Decimal-safe
-- [ ] Deposits authorized/released/captured per policy; no orphaned holds
+- [x] Deposits authorized/released/captured per policy; no orphaned holds
 - [ ] Refunds supported (full/partial) and reflected in payment status
 - [ ] Duplicate order/payment requests with same key have no double effect
 - [ ] Currency configurable; hardcoded `usd` removed
@@ -675,6 +686,7 @@ commission rate/model, deposit model, payout cadence, KYC approach (see
 | 1.4 | 2026-10-14 | Sub-phase 2B complete: `OrderLineItem` + order breakdown columns (`subtotal`/`serviceFee`/`depositAmount`/`taxAmount`/`currency`) and `Payment.currency` (additive migration + backfill), Decimal-safe `pricing` util from `PLATFORM_FEE_PERCENT`/`DEPOSIT_PERCENT`, configurable `CURRENCY` (removed hardcoded `usd`), `GET /rentals/:id/breakdown`; unit + integration tests green |
 | 1.5 | 2026-10-14 | Sub-phase 2C complete: `IdempotencyKey` model + opt-in `Idempotency-Key` middleware on `POST /rentals` and `POST /payments/create` (replay with `Idempotency-Replayed` header, `409` on body mismatch or in-flight duplicate, releases key on 5xx); deterministic body hashing; unit + integration tests green |
 | 1.6 | 2026-10-14 | Sub-phase 2D complete: `Deposit` + `Refund` models and `DepositStatus`/`RefundStatus` enums + `PaymentStatus.PARTIALLY_REFUNDED` (additive migration). Deposit held via Stripe manual capture (rental charge excludes deposit); released on clean return, captured (partially) on damage with a `DAMAGE_FEE` line item. Admin `POST /payments/refund` (full/partial, server-derived amounts, idempotent) + idempotent `charge.refunded` reconciliation; unit + integration tests green (Stripe mocked) |
+| 1.7 | 2026-10-14 | Sub-phase 2E complete: time-tiered cancellation policy (`CANCELLATION_FULL_REFUND_HOURS`/`CANCELLATION_PARTIAL_REFUND_PERCENT`) + `cancellation` util; transitions extended (`CONFIRMED`/`PAID` -> `CANCELLED`); actor-aware cancel (customer/provider/admin) releasing the deposit hold and refunding per policy (provider/admin always full); provider `PATCH /provider/orders/:id/cancel`; admin override `PATCH /admin/rentals/:id/status`; unit + integration tests green |
 
 ---
 

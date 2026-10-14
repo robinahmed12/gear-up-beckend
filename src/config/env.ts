@@ -44,6 +44,14 @@ const envSchema = z.object({
   PLATFORM_FEE_PERCENT: z.coerce.number().min(0).max(100).default(10),
   DEPOSIT_PERCENT: z.coerce.number().min(0).max(100).default(0),
 
+  // Cancellation policy: cancelling at least `CANCELLATION_FULL_REFUND_HOURS`
+  // before the start date refunds the whole rental charge; inside that window
+  // (but before the start date) `CANCELLATION_PARTIAL_REFUND_PERCENT`% is
+  // refunded; once the rental has started there is no refund. The deposit
+  // hold is always released regardless of tier.
+  CANCELLATION_FULL_REFUND_HOURS: z.coerce.number().nonnegative().default(48),
+  CANCELLATION_PARTIAL_REFUND_PERCENT: z.coerce.number().min(0).max(100).default(50),
+
   STRIPE_SECRET_KEY: z.string().min(1, 'STRIPE_SECRET_KEY is required'),
   STRIPE_WEBHOOK_SECRET: z.string().min(1, 'STRIPE_WEBHOOK_SECRET is required'),
 

@@ -4,7 +4,7 @@ import { validate } from '../../middlewares/validate.middleware.js';
 import { verifyTokenMiddleware } from '../../middlewares/auth.middleware.js';
 import { verifyRole } from '../../middlewares/role.middleware.js';
 import { Role } from '../../constants/roles.js';
-import { rentalIdParamSchema, adminRentalQuerySchema } from './rental.validation.js';
+import { rentalIdParamSchema, adminRentalQuerySchema, adminUpdateRentalStatusSchema } from './rental.validation.js';
 
 const router = Router();
 
@@ -36,5 +36,18 @@ router.get('/', validate(adminRentalQuerySchema, 'query'), rentalController.list
  *   but grants access when requester has ADMIN role.
  */
 router.get('/:id', validate(rentalIdParamSchema, 'params'), rentalController.getById);
+
+/**
+ * PATCH /:id/status
+ * -----------------
+ * Admin override: force any order status, bypassing the normal transition
+ * graph (e.g. to recover a mis-sequenced order).
+ */
+router.patch(
+  '/:id/status',
+  validate(rentalIdParamSchema, 'params'),
+  validate(adminUpdateRentalStatusSchema),
+  rentalController.adminUpdateStatus,
+);
 
 export default router;

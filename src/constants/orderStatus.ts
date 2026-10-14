@@ -14,7 +14,10 @@ export { RentalStatus };
  * PLACED    -> CANCELLED : customer backs out before the provider acts
  * CONFIRMED -> PAID      : set by the Payments module's Stripe webhook —
  *                          never by a direct status PATCH.
+ * CONFIRMED -> CANCELLED : either side backs out before payment/collection
  * PAID      -> PICKED_UP : provider hands over the gear
+ * PAID      -> CANCELLED : a paid order is cancelled before pickup, with any
+ *                          refund decided by the cancellation policy
  * PICKED_UP -> RETURNED  : provider marks the gear returned
  *
  * Anything else — skipping a step (PLACED -> PICKED_UP, or CONFIRMED ->
@@ -24,8 +27,8 @@ export { RentalStatus };
  */
 export const RENTAL_STATUS_TRANSITIONS: Record<RentalStatus, RentalStatus[]> = {
   [RentalStatus.PLACED]: [RentalStatus.CONFIRMED, RentalStatus.CANCELLED],
-  [RentalStatus.CONFIRMED]: [RentalStatus.PAID],
-  [RentalStatus.PAID]: [RentalStatus.PICKED_UP],
+  [RentalStatus.CONFIRMED]: [RentalStatus.PAID, RentalStatus.CANCELLED],
+  [RentalStatus.PAID]: [RentalStatus.PICKED_UP, RentalStatus.CANCELLED],
   [RentalStatus.PICKED_UP]: [RentalStatus.RETURNED],
   [RentalStatus.RETURNED]: [],
   [RentalStatus.CANCELLED]: [],

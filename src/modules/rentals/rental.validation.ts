@@ -48,6 +48,12 @@ export const updateRentalStatusSchema = z.object({
   }),
 });
 
+// Admin override accepts any status (the transition graph is bypassed), so
+// unlike updateRentalStatusSchema it has no whitelist refine.
+export const adminUpdateRentalStatusSchema = z.object({
+  status: z.nativeEnum(RentalStatus),
+});
+
 export const rentalQuerySchema = z.object({
   status: z.nativeEnum(RentalStatus).optional(),
   page: z.coerce.number().int().positive().default(1),
@@ -64,5 +70,6 @@ export const adminRentalQuerySchema = rentalQuerySchema.extend({
 
 export type CreateRentalInput = z.infer<typeof createRentalSchema>;
 export type UpdateRentalStatusInput = z.infer<typeof updateRentalStatusSchema>;
+export type AdminUpdateRentalStatusInput = z.infer<typeof adminUpdateRentalStatusSchema>;
 export type RentalQueryInput = z.infer<typeof rentalQuerySchema>;
 export type AdminRentalQueryInput = z.infer<typeof adminRentalQuerySchema>;

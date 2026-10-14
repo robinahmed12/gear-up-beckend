@@ -17,7 +17,10 @@ import {
   gearAvailabilityParamSchema,
   availabilityQuerySchema,
 } from '../modules/availability/availability.validation';
-import { rentalIdParamSchema } from '../modules/rentals/rental.validation';
+import {
+  rentalIdParamSchema,
+  adminUpdateRentalStatusSchema,
+} from '../modules/rentals/rental.validation';
 import {
   refundSchema,
   depositOrderSchema,
@@ -237,17 +240,64 @@ registry.registerPath({
 });
 
 registry.registerPath({
-  method: 'post',
-  path: '/api/payments/deposit/release',
-  tags: ['Payments'],
-  summary: 'Release (void) a held security deposit on a clean return (admin)',
+  method: 'get',
+  path: '/api/rentals/{id}/breakdown',
+  tags: ['Rentals'],
+  summary: 'Get the pricing breakdown and line items for an order',
   security: [{ bearerAuth: [] }],
-  request: { body: jsonBody(depositOrderSchema) },
+  request: { params: rentalIdParamSchema },
   responses: {
-    200: jsonResponse(successResponse, 'Deposit released'),
+    200: jsonResponse(successResponse, 'Order pricing breakdown'),
+    ...errorResponses,
+    403: jsonResponse(errorResponse, 'Not your order'),
+    404: jsonResponse(errorResponse, 'Order not found'),
+  },
+});
+
+registry.registerPath({
+  method: 'patch',
+  path: '/api/rentals/{id}/cancel',
+  tags: ['Rentals'],
+  summary: 'Cancel your own rental order (refund per cancellation policy)',
+  security: [{ bearerAuth: [] }],
+  request: { params: rentalIdParamSchema },
+  responses: {
+    200: jsonResponse(successResponse, 'Order cancelled'),
+    ...errorResponses,
+    403: jsonResponse(errorResponse, 'Not your order'),
+    404: jsonResponse(errorResponse, 'Order not found'),
+    409: jsonResponse(errorResponse, 'Order is not cancellable from its current status'),
+  },
+});
+
+registry.registerPath({
+  method: 'patch',
+  path: '/api/provider/orders/{id}/cancel',
+  tags: ['Rentals'],
+  summary: 'Cancel an order on gear you own (full refund)',
+  security: [{ bearerAuth: [] }],
+  request: { params: rentalIdParamSchema },
+  responses: {
+    200: jsonResponse(successResponse, 'Order cancelled'),
+    ...errorResponses,
+    403: jsonResponse(errorResponse, 'Not your gear'),
+    404: jsonResponse(errorResponse, 'Order not found'),
+    409: jsonResponse(errorResponse, 'Order is not cancellable from its current status'),
+  },
+});
+
+registry.registerPath({
+  method: 'patch',
+  path: '/api/admin/rentals/{id}/status',
+  tags: ['Rentals'],
+  summary: 'Admin override: force any order status',
+  security: [{ bearerAuth: [] }],
+  request: { params: rentalIdParamSchema, body: jsonBody(adminUpdateRentalStatusSchema) },
+  responses: {
+    200: jsonResponse(successResponse, 'Order status overridden'),
     ...errorResponses,
     403: jsonResponse(errorResponse, 'Admin role required'),
-    404: jsonResponse(errorResponse, 'No security deposit for this order'),
+    404: jsonResponse(errorResponse, 'Order not found'),
   },
 });
 

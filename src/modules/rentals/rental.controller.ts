@@ -91,10 +91,28 @@ export const getBreakdown = catchAsync(async (req: Request, res: Response) => {
 export const cancel = catchAsync(async (req: Request, res: Response) => {
   if (!req.user) throw new UnauthorizedError();
 
-  const order = await rentalService.cancelRentalOrder(req.params.id, req.user.id);
+  const order = await rentalService.cancelRentalOrder(req.params.id, {
+    id: req.user.id,
+    role: req.user.role,
+  });
 
   sendSuccess(res, {
     message: 'Rental order cancelled successfully',
+    data: order,
+  });
+});
+
+/**
+ * Controller: adminUpdateStatus
+ * ----------------------------
+ * Admin override: force a rental order into any status regardless of the
+ * normal transition graph. Admin-only (enforced by the route guard).
+ */
+export const adminUpdateStatus = catchAsync(async (req: Request, res: Response) => {
+  const order = await rentalService.adminUpdateOrderStatus(req.params.id, req.body.status);
+
+  sendSuccess(res, {
+    message: 'Order status overridden successfully',
     data: order,
   });
 });

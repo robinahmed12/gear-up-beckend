@@ -22,4 +22,12 @@ router.patch(
   rentalController.updateStatus,
 );
 
+// Provider-initiated cancellation of an order on gear they own. Always
+// refunds the full charge; the shared handler decides that from the actor.
+router.patch(
+  '/:id/cancel',
+  validate(rentalIdParamSchema, 'params'),
+  rentalController.cancel,
+);
+
 export default router;
