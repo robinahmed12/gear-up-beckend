@@ -1,4 +1,10 @@
-import { Prisma, PaymentMethod, PaymentStatus, DepositStatus } from '../../generated/prisma/client.js';
+import {
+  Prisma,
+  PaymentMethod,
+  PaymentStatus,
+  DepositStatus,
+  OrderLineItemType,
+} from '../../generated/prisma/client.js';
 import Stripe from 'stripe';
 import { prisma } from '../../config/prisma.js';
 import { stripe } from '../../config/stripe.js';
@@ -15,6 +21,8 @@ import {
 import { toMinorUnits } from '../../utils/money.js';
 import * as rentalService from '../rentals/rental.service.js';
 import { depositSelect } from './deposit.service.js';
+import { calculateOrderTax } from './tax.service.js';
+import { sendPaymentReceipt } from './receipt.service.js';
 import { PaymentQueryInput, CreatePaymentInput } from './payment.validation.js';
 
 // Admin oversight (list/view every payment) lives alongside customer-facing
@@ -166,6 +174,8 @@ export const createStripePayment = async (customerId: string, input: CreatePayme
       id: true,
       customerId: true,
       status: true,
+      subtotal: true,
+      serviceFee: true,
       totalAmount: true,
       depositAmount: true,
       currency: true,
@@ -197,20 +207,72 @@ export const createStripePayment = async (customerId: string, input: CreatePayme
   // stored uppercase for display, so normalize here rather than hardcoding.
   const currency = order.currency.toLowerCase();
 
-  // The deposit is authorized separately, so only the rest is charged now.
-  const chargeAmount = order.totalAmount.minus(order.depositAmount);
+  // The deposit is authorized separately and is not taxable, so only the
+  // rental charge (subtotal + service fee) is taxed and collected now.
+  const chargeBase = order.subtotal.plus(order.serviceFee);
 
-  if (chargeAmount.lte(0)) {
+  if (chargeBase.lte(0)) {
     throw new AppError('This order has no payable amount to charge.', 400);
   }
+
+  // Tax is opt-in per request: without a billing address we can't determine
+  // the customer's location, so the charge stays tax-free (Stripe Tax is
+  // also a no-op where the account has no active registration).
+  const tax = input.billingAddress
+    ? await calculateOrderTax(chargeBase, currency, input.billingAddress)
+    : null;
+
+  const chargeAmount = tax ? tax.amountTotal : chargeBase;
 
   const paymentIntent = await stripe.paymentIntents.create({
     amount: centsFromDecimal(chargeAmount),
     currency,
     receipt_email: order.customer.email,
     description: `GearUp rental — ${order.gear.title}`,
-    metadata: { rentalOrderId: order.id, customerId, kind: 'rental_charge' },
+    metadata: {
+      rentalOrderId: order.id,
+      customerId,
+      kind: 'rental_charge',
+      ...(tax?.calculationId ? { taxCalculationId: tax.calculationId } : {}),
+    },
   });
+
+  // Freeze the tax on the order (and itemize it) so the persisted total always
+  // equals the sum of its line items. Re-initiating reconciles the TAX line
+  // rather than appending a second one; a zero-tax result clears any previous
+  // tax so re-quoting with a different address can't leave stale tax behind.
+  if (tax) {
+    const newTotal = order.subtotal
+      .plus(order.serviceFee)
+      .plus(order.depositAmount)
+      .plus(tax.taxAmount);
+
+    const ops: Prisma.PrismaPromise<unknown>[] = [
+      prisma.rentalOrder.update({
+        where: { id: order.id },
+        data: { taxAmount: tax.taxAmount, totalAmount: newTotal },
+      }),
+      prisma.orderLineItem.deleteMany({
+        where: { rentalOrderId: order.id, type: OrderLineItemType.TAX },
+      }),
+    ];
+
+    if (!tax.taxAmount.isZero()) {
+      ops.push(
+        prisma.orderLineItem.create({
+          data: {
+            rentalOrderId: order.id,
+            type: OrderLineItemType.TAX,
+            amount: tax.taxAmount,
+            currency: order.currency,
+            description: 'Sales tax',
+          },
+        }),
+      );
+    }
+
+    await prisma.$transaction(ops);
+  }
 
   const data = {
     transactionId: paymentIntent.id,
@@ -232,7 +294,13 @@ export const createStripePayment = async (customerId: string, input: CreatePayme
       });
 
   let deposit:
-    | { id: string; amount: Prisma.Decimal; currency: string; status: DepositStatus; clientSecret: string | null }
+    | {
+        id: string;
+        amount: Prisma.Decimal;
+        currency: string;
+        status: DepositStatus;
+        clientSecret: string | null;
+      }
     | undefined;
 
   if (order.depositAmount.gt(0)) {
@@ -324,6 +392,11 @@ export const handleStripePaymentSucceeded = async (
   });
 
   await rentalService.markOrderAsPaid(payment.rentalOrderId);
+
+  // Best-effort: the payment is already recorded, so a mail failure must not
+  // fail the webhook (Stripe would retry, see the payment as COMPLETED, and
+  // never re-send). The failure is logged for follow-up instead.
+  await sendPaymentReceipt(payment.rentalOrderId);
 };
 
 export const handleStripePaymentFailed = async (

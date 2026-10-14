@@ -16,11 +16,28 @@ export const paymentQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).default(10),
 });
 
-// Stripe is the only method wired up in this phase — the enum still
-// a clear "not yet supported" error rather than pretending to process it.
+// Customer location used by Stripe Tax to compute the tax on the rental
+// charge. `country` is the only field Stripe strictly needs outside the US;
+// US/Canada also need a postal code or state. Fields are passed through
+// as-is so Stripe can reject an insufficient address with a clear error.
+export const billingAddressSchema = z.object({
+  line1: z.string().trim().min(1).max(200).optional(),
+  line2: z.string().trim().max(200).optional(),
+  city: z.string().trim().max(120).optional(),
+  state: z.string().trim().max(120).optional(),
+  postalCode: z.string().trim().max(32).optional(),
+  country: z.string().trim().length(2, 'Must be a 2-letter ISO country code').toUpperCase(),
+});
+
+// Stripe is the only method wired up in this phase — the SSLCommerz branch
+// is rejected explicitly in the service with a clear "not yet supported"
+// error rather than pretending to process it.
 export const createPaymentSchema = z.object({
   rentalOrderId: uuid,
   method: z.nativeEnum(PaymentMethod).default(PaymentMethod.STRIPE),
+  // Optional: when supplied, tax is calculated with Stripe Tax and added to
+  // the charge; when omitted the charge is tax-free.
+  billingAddress: billingAddressSchema.optional(),
 });
 
 // Admin: full or partial refund against a captured payment. `amount` is
@@ -42,8 +59,8 @@ export const captureDepositSchema = depositOrderSchema.extend({
 });
 
 export type PaymentQueryInput = z.infer<typeof paymentQuerySchema>;
+export type BillingAddressInput = z.infer<typeof billingAddressSchema>;
 export type CreatePaymentInput = z.infer<typeof createPaymentSchema>;
 export type RefundInput = z.infer<typeof refundSchema>;
 export type DepositOrderInput = z.infer<typeof depositOrderSchema>;
 export type CaptureDepositInput = z.infer<typeof captureDepositSchema>;
-
