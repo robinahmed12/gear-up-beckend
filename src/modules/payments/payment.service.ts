@@ -23,6 +23,7 @@ const paymentSelect = {
   id: true,
   transactionId: true,
   amount: true,
+  currency: true,
   method: true,
   status: true,
   paidAt: true,
@@ -160,6 +161,7 @@ export const createStripePayment = async (customerId: string, input: CreatePayme
       customerId: true,
       status: true,
       totalAmount: true,
+      currency: true,
       customer: { select: { name: true, email: true } },
       gear: { select: { title: true } },
       payment: { select: { id: true, status: true } },
@@ -184,9 +186,13 @@ export const createStripePayment = async (customerId: string, input: CreatePayme
     throw new ConflictError('This rental order has already been paid for');
   }
 
+  // Stripe expects a lowercase ISO-4217 currency; the order's snapshot is
+  // stored uppercase for display, so normalize here rather than hardcoding.
+  const currency = order.currency.toLowerCase();
+
   const paymentIntent = await stripe.paymentIntents.create({
     amount: centsFromDecimal(order.totalAmount),
-    currency: 'usd',
+    currency,
     receipt_email: order.customer.email,
     description: `GearUp rental — ${order.gear.title}`,
     metadata: { rentalOrderId: order.id, customerId },
@@ -195,6 +201,7 @@ export const createStripePayment = async (customerId: string, input: CreatePayme
   const data = {
     transactionId: paymentIntent.id,
     amount: order.totalAmount,
+    currency: order.currency,
     method: PaymentMethod.STRIPE,
     status: PaymentStatus.PENDING,
   };

@@ -365,6 +365,23 @@ export type JsonNullableWithAggregatesFilterBase<$PrismaModel = never> = {
   _max?: Prisma.NestedJsonNullableFilter<$PrismaModel>
 }
 
+export type EnumOrderLineItemTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.OrderLineItemType | Prisma.EnumOrderLineItemTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.OrderLineItemType[] | Prisma.ListEnumOrderLineItemTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.OrderLineItemType[] | Prisma.ListEnumOrderLineItemTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumOrderLineItemTypeFilter<$PrismaModel> | $Enums.OrderLineItemType
+}
+
+export type EnumOrderLineItemTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.OrderLineItemType | Prisma.EnumOrderLineItemTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.OrderLineItemType[] | Prisma.ListEnumOrderLineItemTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.OrderLineItemType[] | Prisma.ListEnumOrderLineItemTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumOrderLineItemTypeWithAggregatesFilter<$PrismaModel> | $Enums.OrderLineItemType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumOrderLineItemTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumOrderLineItemTypeFilter<$PrismaModel>
+}
+
 export type EnumVerificationTokenTypeFilter<$PrismaModel = never> = {
   equals?: $Enums.VerificationTokenType | Prisma.EnumVerificationTokenTypeFieldRefInput<$PrismaModel>
   in?: $Enums.VerificationTokenType[] | Prisma.ListEnumVerificationTokenTypeFieldRefInput<$PrismaModel>
@@ -706,6 +723,23 @@ export type NestedJsonNullableFilterBase<$PrismaModel = never> = {
   gt?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel>
   gte?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel>
   not?: runtime.InputJsonValue | Prisma.JsonFieldRefInput<$PrismaModel> | Prisma.JsonNullValueFilter
+}
+
+export type NestedEnumOrderLineItemTypeFilter<$PrismaModel = never> = {
+  equals?: $Enums.OrderLineItemType | Prisma.EnumOrderLineItemTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.OrderLineItemType[] | Prisma.ListEnumOrderLineItemTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.OrderLineItemType[] | Prisma.ListEnumOrderLineItemTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumOrderLineItemTypeFilter<$PrismaModel> | $Enums.OrderLineItemType
+}
+
+export type NestedEnumOrderLineItemTypeWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.OrderLineItemType | Prisma.EnumOrderLineItemTypeFieldRefInput<$PrismaModel>
+  in?: $Enums.OrderLineItemType[] | Prisma.ListEnumOrderLineItemTypeFieldRefInput<$PrismaModel>
+  notIn?: $Enums.OrderLineItemType[] | Prisma.ListEnumOrderLineItemTypeFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedEnumOrderLineItemTypeWithAggregatesFilter<$PrismaModel> | $Enums.OrderLineItemType
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumOrderLineItemTypeFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumOrderLineItemTypeFilter<$PrismaModel>
 }
 
 export type NestedEnumVerificationTokenTypeFilter<$PrismaModel = never> = {

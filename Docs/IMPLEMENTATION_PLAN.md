@@ -351,10 +351,10 @@ extend `payments`; add idempotency helper.
 - [x] AVAIL-4: pure `rangesOverlap([s,e))` util (half-open) + unit tests
 
 **2B — Pricing breakdown, line items & configurable currency**
-- [ ] RENT-1: `OrderLineItem` model + snapshot breakdown columns (`subtotal`, `serviceFee`, `depositAmount`, `taxAmount`, `currency`)
-- [ ] RENT-2: Decimal-safe pricing util (fees/deposit/rounding) from `PLATFORM_FEE_PERCENT`/`DEPOSIT_PERCENT`
-- [ ] PLAT-7: configurable `CURRENCY` (default `USD`); remove hardcoded `'usd'`; persist on order + payment
-- [ ] RENT-3: `GET /rentals/:id/breakdown` (owner/admin scoped)
+- [x] RENT-1: `OrderLineItem` model + snapshot breakdown columns (`subtotal`, `serviceFee`, `depositAmount`, `taxAmount`, `currency`)
+- [x] RENT-2: Decimal-safe pricing util (fees/deposit/rounding) from `PLATFORM_FEE_PERCENT`/`DEPOSIT_PERCENT`
+- [x] PLAT-7: configurable `CURRENCY` (default `USD`); remove hardcoded `'usd'`; persist on order + payment
+- [x] RENT-3: `GET /rentals/:id/breakdown` (owner/admin scoped)
 
 **2C — Idempotency**
 - [ ] PAY-3: `IdempotencyKey` model + middleware on `POST /rentals` and `POST /payments/create` (replay; `409` on body mismatch)
@@ -377,7 +377,7 @@ extend `payments`; add idempotency helper.
 **Testing requirements**
 
 - [x] (2A) Unit: overlap detection (adjacent, exact, nested ranges)
-- [ ] (2B) Unit: pricing breakdown math and rounding (Decimal)
+- [x] (2B) Unit: pricing breakdown math and rounding (Decimal)
 - [ ] (2C) Unit/Integration: idempotency replay returns identical response, no double effect
 - [x] (2A) Integration: concurrent booking attempts — exactly one succeeds per window
 - [ ] (2D) Integration: deposit authorize → release; damage → capture
@@ -666,6 +666,7 @@ commission rate/model, deposit model, payout cadence, KYC approach (see
 | 1.1 | 2026-10-13 | Phase 1 (Harden) implemented and locally verified: test harness, CI workflow, Docker/compose, auth lifecycle (refresh/verify/reset), Redis-backed rate limiting, request IDs + Sentry wiring, OpenAPI/Swagger, audit foundation |
 | 1.2 | 2026-10-14 | Phase 2 split into sub-phases 2A–2F; decisions recorded (Stripe Tax last, advisory xact lock for availability, global env fee/deposit defaults) |
 | 1.3 | 2026-10-14 | Sub-phase 2A complete: `GearAvailabilityBlock` + migration, half-open `rangesOverlap` util, `GET /gear/:id/availability`, provider block CRUD, advisory-lock overlap check in `createRentalOrder` (global stock counter retired); unit + integration tests green |
+| 1.4 | 2026-10-14 | Sub-phase 2B complete: `OrderLineItem` + order breakdown columns (`subtotal`/`serviceFee`/`depositAmount`/`taxAmount`/`currency`) and `Payment.currency` (additive migration + backfill), Decimal-safe `pricing` util from `PLATFORM_FEE_PERCENT`/`DEPOSIT_PERCENT`, configurable `CURRENCY` (removed hardcoded `usd`), `GET /rentals/:id/breakdown`; unit + integration tests green |
 
 ---
 

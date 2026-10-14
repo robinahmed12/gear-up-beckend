@@ -27,6 +27,14 @@ router.get(
   rentalController.listOwn,
 );
 
+// Pricing breakdown for an order — owner customer/provider or admin.
+// Declared before GET /:id so the more specific path wins.
+router.get(
+  '/:id/breakdown',
+  validate(rentalIdParamSchema, 'params'),
+  rentalController.getBreakdown,
+);
+
 // GET /:id is shared: a customer viewing their own order and a provider
 // viewing an order on their gear both land here — ownership is checked
 // inside the service (getRentalByIdForUser), not by role middleware.

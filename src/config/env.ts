@@ -32,6 +32,18 @@ const envSchema = z.object({
 
   BCRYPT_SALT_ROUNDS: z.coerce.number().default(12),
 
+  // Pricing & money. Percentages are whole numbers (10 == 10%), matched by
+  // the pricing util. CURRENCY is an ISO-4217 code, normalized to uppercase
+  // so downstream (Prisma snapshots, Stripe) always sees a canonical value.
+  CURRENCY: z
+    .string()
+    .trim()
+    .regex(/^[A-Za-z]{3}$/, 'CURRENCY must be a 3-letter ISO-4217 code')
+    .default('USD')
+    .transform((value) => value.toUpperCase()),
+  PLATFORM_FEE_PERCENT: z.coerce.number().min(0).max(100).default(10),
+  DEPOSIT_PERCENT: z.coerce.number().min(0).max(100).default(0),
+
   STRIPE_SECRET_KEY: z.string().min(1, 'STRIPE_SECRET_KEY is required'),
   STRIPE_WEBHOOK_SECRET: z.string().min(1, 'STRIPE_WEBHOOK_SECRET is required'),
 

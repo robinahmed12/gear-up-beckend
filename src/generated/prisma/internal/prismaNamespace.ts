@@ -389,6 +389,7 @@ export const ModelName = {
   Gear: 'Gear',
   RentalOrder: 'RentalOrder',
   Payment: 'Payment',
+  OrderLineItem: 'OrderLineItem',
   Review: 'Review',
   GearAvailabilityBlock: 'GearAvailabilityBlock',
   Session: 'Session',
@@ -409,7 +410,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "category" | "gear" | "rentalOrder" | "payment" | "review" | "gearAvailabilityBlock" | "session" | "verificationToken" | "auditLog"
+    modelProps: "user" | "category" | "gear" | "rentalOrder" | "payment" | "orderLineItem" | "review" | "gearAvailabilityBlock" | "session" | "verificationToken" | "auditLog"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -780,6 +781,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         count: {
           args: Prisma.PaymentCountArgs<ExtArgs>
           result: runtime.Types.Utils.Optional<Prisma.PaymentCountAggregateOutputType> | number
+        }
+      }
+    }
+    OrderLineItem: {
+      payload: Prisma.$OrderLineItemPayload<ExtArgs>
+      fields: Prisma.OrderLineItemFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.OrderLineItemFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrderLineItemPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.OrderLineItemFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrderLineItemPayload>
+        }
+        findFirst: {
+          args: Prisma.OrderLineItemFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrderLineItemPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.OrderLineItemFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrderLineItemPayload>
+        }
+        findMany: {
+          args: Prisma.OrderLineItemFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrderLineItemPayload>[]
+        }
+        create: {
+          args: Prisma.OrderLineItemCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrderLineItemPayload>
+        }
+        createMany: {
+          args: Prisma.OrderLineItemCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.OrderLineItemCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrderLineItemPayload>[]
+        }
+        delete: {
+          args: Prisma.OrderLineItemDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrderLineItemPayload>
+        }
+        update: {
+          args: Prisma.OrderLineItemUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrderLineItemPayload>
+        }
+        deleteMany: {
+          args: Prisma.OrderLineItemDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.OrderLineItemUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.OrderLineItemUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrderLineItemPayload>[]
+        }
+        upsert: {
+          args: Prisma.OrderLineItemUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$OrderLineItemPayload>
+        }
+        aggregate: {
+          args: Prisma.OrderLineItemAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateOrderLineItem>
+        }
+        groupBy: {
+          args: Prisma.OrderLineItemGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.OrderLineItemGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.OrderLineItemCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.OrderLineItemCountAggregateOutputType> | number
         }
       }
     }
@@ -1246,6 +1321,11 @@ export const RentalOrderScalarFieldEnum = {
   endDate: 'endDate',
   totalDays: 'totalDays',
   pricePerDay: 'pricePerDay',
+  subtotal: 'subtotal',
+  serviceFee: 'serviceFee',
+  depositAmount: 'depositAmount',
+  taxAmount: 'taxAmount',
+  currency: 'currency',
   totalAmount: 'totalAmount',
   status: 'status',
   createdAt: 'createdAt',
@@ -1261,6 +1341,7 @@ export const PaymentScalarFieldEnum = {
   id: 'id',
   transactionId: 'transactionId',
   amount: 'amount',
+  currency: 'currency',
   method: 'method',
   status: 'status',
   paidAt: 'paidAt',
@@ -1271,6 +1352,19 @@ export const PaymentScalarFieldEnum = {
 } as const
 
 export type PaymentScalarFieldEnum = (typeof PaymentScalarFieldEnum)[keyof typeof PaymentScalarFieldEnum]
+
+
+export const OrderLineItemScalarFieldEnum = {
+  id: 'id',
+  rentalOrderId: 'rentalOrderId',
+  type: 'type',
+  amount: 'amount',
+  currency: 'currency',
+  description: 'description',
+  createdAt: 'createdAt'
+} as const
+
+export type OrderLineItemScalarFieldEnum = (typeof OrderLineItemScalarFieldEnum)[keyof typeof OrderLineItemScalarFieldEnum]
 
 
 export const ReviewScalarFieldEnum = {
@@ -1551,6 +1645,20 @@ export type EnumQueryModeFieldRefInput<$PrismaModel> = FieldRefInputType<$Prisma
 
 
 /**
+ * Reference to a field of type 'OrderLineItemType'
+ */
+export type EnumOrderLineItemTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OrderLineItemType'>
+    
+
+
+/**
+ * Reference to a field of type 'OrderLineItemType[]'
+ */
+export type ListEnumOrderLineItemTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'OrderLineItemType[]'>
+    
+
+
+/**
  * Reference to a field of type 'VerificationTokenType'
  */
 export type EnumVerificationTokenTypeFieldRefInput<$PrismaModel> = FieldRefInputType<$PrismaModel, 'VerificationTokenType'>
@@ -1678,6 +1786,7 @@ export type GlobalOmitConfig = {
   gear?: Prisma.GearOmit
   rentalOrder?: Prisma.RentalOrderOmit
   payment?: Prisma.PaymentOmit
+  orderLineItem?: Prisma.OrderLineItemOmit
   review?: Prisma.ReviewOmit
   gearAvailabilityBlock?: Prisma.GearAvailabilityBlockOmit
   session?: Prisma.SessionOmit

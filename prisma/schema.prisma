@@ -58,6 +58,19 @@ enum VerificationTokenType {
   PASSWORD_RESET
 }
 
+// Line-item kinds for an order's itemized breakdown. Explicit enum so a
+// typo can never create an unrecognized line type.
+enum OrderLineItemType {
+  RENTAL
+  SERVICE_FEE
+  DEPOSIT
+  TAX
+  DAMAGE_FEE
+  LATE_FEE
+  REFUND
+  ADJUSTMENT
+}
+
 // ─────────────────────────────────────────────────────────────
 // Models
 // ─────────────────────────────────────────────────────────────
@@ -164,7 +177,22 @@ model RentalOrder {
   pricePerDay Decimal      @db.Decimal(10, 2)
   // Snapshotted from Gear.pricePerDay at order creation time, so a later
   // price change by the provider never rewrites historical order totals.
+  // Breakdown columns below are all snapshots computed once at creation by
+  // the pricing util, then frozen — a later env/config change (fee %,
+  // deposit %) must never rewrite a historical order's numbers.
+  subtotal    Decimal      @db.Decimal(10, 2) @default(0)
+  // subtotal = pricePerDay * quantity * totalDays (the rental cost only).
+  serviceFee    Decimal @db.Decimal(10, 2) @default(0)
+  // Platform commission, subtotal * PLATFORM_FEE_PERCENT.
+  depositAmount Decimal @db.Decimal(10, 2) @default(0)
+  // Refundable security deposit, subtotal * DEPOSIT_PERCENT (0 = none).
+  taxAmount     Decimal @db.Decimal(10, 2) @default(0)
+  // Tax added by the tax provider (populated in the tax sub-phase).
+  currency    String       @default("USD")
+  // ISO-4217 code snapshot, so a later CURRENCY change never rewrites
+  // historical orders. Kept on the order as well as the payment.
   totalAmount Decimal      @db.Decimal(10, 2)
+  // Grand total charged = subtotal + serviceFee + depositAmount + taxAmount.
   status      RentalStatus @default(PLACED)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
@@ -182,6 +210,11 @@ model RentalOrder {
 
   payment Payment?
   review  Review?
+  lineItems OrderLineItem[]
+  // Itemized audit/display trail mirroring the breakdown columns above.
+  // The columns are the source of truth for totals; line items exist so the
+  // customer (and support) can see how the total was composed, and so later
+  // phases can append fees (damage/late/tax) without overwriting history.
 
   @@index([customerId])
   @@index([gearId])
@@ -198,6 +231,9 @@ model Payment {
   id            String        @id @default(uuid())
   transactionId String        @unique
   amount        Decimal       @db.Decimal(10, 2)
+  currency      String        @default("USD")
+  // ISO-4217 code snapshot for this charge, independent of the order's
+  // current value (a payment is an immutable record of what was charged).
   method        PaymentMethod
   status        PaymentStatus @default(PENDING)
   paidAt        DateTime?
@@ -213,6 +249,24 @@ model Payment {
 
   @@index([status])
   @@map("payments")
+}
+
+model OrderLineItem {
+  id          String            @id @default(uuid())
+  rentalOrderId String
+  rentalOrder RentalOrder       @relation(fields: [rentalOrderId], references: [id], onDelete: Cascade)
+  // Cascade: line items are a component of the order and meaningless
+  // without it (orders are cancelled, never hard-deleted, in practice).
+  type        OrderLineItemType
+  amount      Decimal           @db.Decimal(10, 2)
+  // Signed amount in the order currency: fees/deposits are positive,
+  // refunds/adjustments may be negative, so the sum reconstructs the total.
+  currency    String            @default("USD")
+  description String?
+  createdAt   DateTime          @default(now())
+
+  @@index([rentalOrderId])
+  @@map("order_line_items")
 }
 
 model Review {

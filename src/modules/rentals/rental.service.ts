@@ -6,6 +6,11 @@ import { ConflictError } from '../../errors/ConflictError.js';
 import { RentalStatus, assertValidTransition } from '../../constants/orderStatus.js';
 import { calculateTotalDays } from '../../utils/rentalDates.js';
 import {
+  calculateOrderPricing,
+  buildOrderLineItems,
+} from '../../utils/pricing.js';
+import { env } from '../../config/env.js';
+import {
   acquireGearBookingLock,
   assertGearAvailable,
 } from '../availability/availability.service.js';
@@ -28,6 +33,11 @@ const rentalSelect = {
   endDate: true,
   totalDays: true,
   pricePerDay: true,
+  subtotal: true,
+  serviceFee: true,
+  depositAmount: true,
+  taxAmount: true,
+  currency: true,
   totalAmount: true,
   status: true,
   createdAt: true,
@@ -63,7 +73,15 @@ export const createRentalOrder = async (customerId: string, input: CreateRentalI
 
   const totalDays = calculateTotalDays(input.startDate, input.endDate);
   const pricePerDay = gear.pricePerDay;
-  const totalAmount = Number(pricePerDay) * input.quantity * totalDays;
+
+  const pricing = calculateOrderPricing({
+    pricePerDay,
+    quantity: input.quantity,
+    totalDays,
+    platformFeePercent: env.PLATFORM_FEE_PERCENT,
+    depositPercent: env.DEPOSIT_PERCENT,
+    currency: env.CURRENCY,
+  });
 
   // Availability is date-scoped: a gear item's `stock` is the number of
   // identical units, and an order reserves `quantity` of them for the
@@ -88,8 +106,14 @@ export const createRentalOrder = async (customerId: string, input: CreateRentalI
         endDate: input.endDate,
         totalDays,
         pricePerDay,
-        totalAmount,
+        subtotal: pricing.subtotal,
+        serviceFee: pricing.serviceFee,
+        depositAmount: pricing.depositAmount,
+        taxAmount: pricing.taxAmount,
+        totalAmount: pricing.totalAmount,
+        currency: pricing.currency,
         status: RentalStatus.PLACED,
+        lineItems: { create: buildOrderLineItems(pricing) },
       },
       select: rentalSelect,
     });
@@ -201,6 +225,56 @@ export const getRentalByIdForUser = async (
   }
 
   return order;
+};
+
+/**
+ * Returns the frozen pricing breakdown for an order plus its itemized line
+ * items. Visibility mirrors getRentalByIdForUser: the owning customer, the
+ * provider whose gear was rented, or an admin.
+ */
+export const getRentalBreakdown = async (
+  orderId: string,
+  requester: { id: string; role: Role },
+) => {
+  const order = await prisma.rentalOrder.findUnique({
+    where: { id: orderId },
+    select: {
+      id: true,
+      customerId: true,
+      subtotal: true,
+      serviceFee: true,
+      depositAmount: true,
+      taxAmount: true,
+      totalAmount: true,
+      currency: true,
+      gear: { select: { providerId: true } },
+      lineItems: {
+        orderBy: { createdAt: 'asc' },
+        select: {
+          id: true,
+          type: true,
+          amount: true,
+          currency: true,
+          description: true,
+          createdAt: true,
+        },
+      },
+    },
+  });
+
+  if (!order) {
+    throw new NotFoundError('Rental order not found');
+  }
+
+  const isOwningCustomer = order.customerId === requester.id;
+  const isOwningProvider = order.gear.providerId === requester.id;
+
+  if (!isOwningCustomer && !isOwningProvider && requester.role !== Role.ADMIN) {
+    throw new ForbiddenError('You do not have access to this rental order');
+  }
+
+  const { customerId: _customerId, gear: _gear, ...breakdown } = order;
+  return breakdown;
 };
 
 export const updateOrderStatus = async (

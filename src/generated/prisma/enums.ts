@@ -62,3 +62,17 @@ export const VerificationTokenType = {
 } as const
 
 export type VerificationTokenType = (typeof VerificationTokenType)[keyof typeof VerificationTokenType]
+
+
+export const OrderLineItemType = {
+  RENTAL: 'RENTAL',
+  SERVICE_FEE: 'SERVICE_FEE',
+  DEPOSIT: 'DEPOSIT',
+  TAX: 'TAX',
+  DAMAGE_FEE: 'DAMAGE_FEE',
+  LATE_FEE: 'LATE_FEE',
+  REFUND: 'REFUND',
+  ADJUSTMENT: 'ADJUSTMENT'
+} as const
+
+export type OrderLineItemType = (typeof OrderLineItemType)[keyof typeof OrderLineItemType]

@@ -64,8 +64,25 @@ export const getById = catchAsync(async (req: Request, res: Response) => {
 });
 
 /**
+ * Controller: getBreakdown
+ * ------------------------
+ * Returns the frozen pricing breakdown (subtotal/fees/deposit/tax/total) and
+ * itemized line items for an order. Visible to the owning customer, the
+ * provider, or an admin — the service enforces this.
+ */
+export const getBreakdown = catchAsync(async (req: Request, res: Response) => {
+  if (!req.user) throw new UnauthorizedError();
+
+  const breakdown = await rentalService.getRentalBreakdown(req.params.id, req.user);
+
+  sendSuccess(res, {
+    message: 'Rental order breakdown fetched successfully',
+    data: breakdown,
+  });
+});
+
+/**
  * Controller: cancel
- * ------------------
  * Cancels a rental order for the authenticated customer.
  * - Requires a logged-in user.
  * - Accepts order ID from route params.

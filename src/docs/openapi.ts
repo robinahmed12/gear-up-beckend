@@ -13,6 +13,11 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
 } from '../modules/auth/auth.validation';
+import {
+  gearAvailabilityParamSchema,
+  availabilityQuerySchema,
+} from '../modules/availability/availability.validation';
+import { rentalIdParamSchema } from '../modules/rentals/rental.validation';
 
 extendZodWithOpenApi(z);
 
@@ -161,6 +166,37 @@ registry.registerPath({
   summary: 'Get the current authenticated user',
   security: [{ bearerAuth: [] }],
   responses: { 200: jsonResponse(successResponse, 'Current user'), ...errorResponses },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/gear/{id}/availability',
+  tags: ['Availability'],
+  summary: 'Check whether a gear item is free for a date window',
+  request: {
+    params: gearAvailabilityParamSchema,
+    query: availabilityQuerySchema,
+  },
+  responses: {
+    200: jsonResponse(successResponse, 'Availability for the requested window'),
+    ...errorResponses,
+    404: jsonResponse(errorResponse, 'Gear item not found'),
+  },
+});
+
+registry.registerPath({
+  method: 'get',
+  path: '/api/rentals/{id}/breakdown',
+  tags: ['Rentals'],
+  summary: 'Get the pricing breakdown and line items for an order',
+  security: [{ bearerAuth: [] }],
+  request: { params: rentalIdParamSchema },
+  responses: {
+    200: jsonResponse(successResponse, 'Order pricing breakdown'),
+    ...errorResponses,
+    403: jsonResponse(errorResponse, 'Not your order'),
+    404: jsonResponse(errorResponse, 'Rental order not found'),
+  },
 });
 
 const generator = new OpenApiGeneratorV3(registry.definitions);
