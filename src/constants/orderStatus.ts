@@ -56,6 +56,20 @@ export const STOCK_RELEASING_STATUSES: RentalStatus[] = [
 ];
 
 /**
+ * Statuses that still hold a date-scoped reservation against the gear's
+ * stock. Availability for a requested window is computed by summing the
+ * `quantity` of these orders whose [startDate,endDate) intersects that
+ * window. CANCELLED/RETURNED are excluded, so moving an order into either
+ * state automatically frees the window it held.
+ */
+export const RESERVING_STATUSES: RentalStatus[] = [
+  RentalStatus.PLACED,
+  RentalStatus.CONFIRMED,
+  RentalStatus.PAID,
+  RentalStatus.PICKED_UP,
+];
+
+/**
  * Statuses a PROVIDER may set via PATCH /provider/orders/:id/status.
  * CANCELLED is customer-initiated (separate endpoint, and only from
  * PLACED); PAID is webhook-initiated. This keeps the provider-facing

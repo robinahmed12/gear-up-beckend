@@ -332,29 +332,58 @@ boundaries; ensure no client-controlled amounts.
 **Architecture changes:** introduce `availability` and `pricing` domain modules;
 extend `payments`; add idempotency helper.
 
-**Tasks**
+**Decisions (confirmed):**
 
-- [ ] AVAIL-1: model `GearAvailabilityBlock` + date-scoped reservation; migration
-- [ ] AVAIL-2: availability query endpoint + provider block CRUD
-- [ ] AVAIL-3: transactional overlap check on booking; return `409` on conflict
-- [ ] RENT-1: order line items + pricing breakdown (rental, fees, tax, deposit)
-- [ ] PAY-1: deposit authorize at booking (manual capture) + release on clean return
-- [ ] PAY-2: refund service + Stripe `charge.refunded` webhook; set `REFUNDED`
-- [ ] PAY-3: idempotency-key middleware + `IdempotencyKey` store for order/payment writes
-- [ ] PLAT-7: configurable currency (default `USD`) end-to-end; remove hardcoded `'usd'`
-- [ ] PAY-4: tax calculation + invoice/receipt (Stripe Tax + emailed PDF)
+- Tax/invoicing (2F) is in scope but implemented **last** (Stripe Tax + emailed
+  receipt; no custom PDF).
+- Availability concurrency uses a **Postgres advisory xact lock** keyed on
+  `gearId` inside the booking transaction.
+- Platform fee and deposit are **global env defaults**
+  (`PLATFORM_FEE_PERCENT`, `DEPOSIT_PERCENT`); per-gear overrides deferred.
+- Plan doc updated before coding; one commit per sub-phase.
+
+**Sub-phases**
+
+**2A — Availability engine & double-booking prevention**
+- [x] AVAIL-1: model `GearAvailabilityBlock`; `RESERVING_STATUSES` constant; migration + index
+- [x] AVAIL-2: `GET /gear/:id/availability?start&end` + provider block CRUD (`POST/DELETE /provider/gear/:id/blocks`)
+- [x] AVAIL-3: transactional overlap check under Postgres advisory xact lock; `409` on conflict
+- [x] AVAIL-4: pure `rangesOverlap([s,e))` util (half-open) + unit tests
+
+**2B — Pricing breakdown, line items & configurable currency**
+- [ ] RENT-1: `OrderLineItem` model + snapshot breakdown columns (`subtotal`, `serviceFee`, `depositAmount`, `taxAmount`, `currency`)
+- [ ] RENT-2: Decimal-safe pricing util (fees/deposit/rounding) from `PLATFORM_FEE_PERCENT`/`DEPOSIT_PERCENT`
+- [ ] PLAT-7: configurable `CURRENCY` (default `USD`); remove hardcoded `'usd'`; persist on order + payment
+- [ ] RENT-3: `GET /rentals/:id/breakdown` (owner/admin scoped)
+
+**2C — Idempotency**
+- [ ] PAY-3: `IdempotencyKey` model + middleware on `POST /rentals` and `POST /payments/create` (replay; `409` on body mismatch)
+
+**2D — Deposits & refunds**
+- [ ] PAY-1: deposit authorize at booking (manual capture) + release on clean return; capture on damage
+- [ ] PAY-2: refund service (full/partial) + Stripe `charge.refunded` webhook; set `REFUNDED`/`PARTIALLY_REFUNDED`
+- [ ] PAY-5: damage/late fees recorded as line items
+
+**2E — Cancellation policy & status timing**
+- [ ] RENT-4: extend transitions (provider-cancel, admin-override, cancel from `CONFIRMED`/`PAID` per policy)
+- [ ] RENT-5: date-aware release of reservation + deposit on cancel/return (replaces blunt stock increment)
+
+**2F — Tax & invoices (last)**
+- [ ] PAY-4: Stripe Tax on the charge + emailed receipt; tax persisted as a line item
+
+**Cross-cutting**
 - [ ] Remove/guard `SSLCommerz` (reject explicitly or drop from accepted methods)
-- [ ] Update rental cancellation timing (stock/release rules on cancel/return)
 
 **Testing requirements**
 
-- [ ] Unit: overlap detection (boundary cases: adjacent, exact, nested ranges)
-- [ ] Unit: pricing breakdown math and rounding (Decimal)
-- [ ] Unit: idempotency replay returns identical response, no double effect
-- [ ] Integration: concurrent booking attempts — exactly one succeeds per window
-- [ ] Integration: deposit authorize → release; damage → capture
-- [ ] Integration: refund (full/partial) updates payment + order consistently
-- [ ] Integration: `charge.refunded` webhook idempotent (no double refund)
+- [x] (2A) Unit: overlap detection (adjacent, exact, nested ranges)
+- [ ] (2B) Unit: pricing breakdown math and rounding (Decimal)
+- [ ] (2C) Unit/Integration: idempotency replay returns identical response, no double effect
+- [x] (2A) Integration: concurrent booking attempts — exactly one succeeds per window
+- [ ] (2D) Integration: deposit authorize → release; damage → capture
+- [ ] (2D) Integration: refund (full/partial) updates payment + order consistently
+- [ ] (2D) Integration: `charge.refunded` webhook idempotent (no double refund)
+- [ ] (2A/2D) Stripe interactions mocked in tests (no live key required)
 
 **Acceptance criteria**
 
@@ -364,7 +393,7 @@ extend `payments`; add idempotency helper.
 - [ ] Refunds supported (full/partial) and reflected in payment status
 - [ ] Duplicate order/payment requests with same key have no double effect
 - [ ] Currency configurable; hardcoded `usd` removed
-- [ ] Tax line present and invoice emailed on completion
+- [ ] Tax line present and receipt emailed on completion
 
 **Validation commands**
 
@@ -577,7 +606,7 @@ Update marks as work proceeds.
 |---|---|---|
 | 0 | Stabilize (bug/config fixes) | `[x]` |
 | 1 | Harden (tests, CI, auth, observability) | `[~]` |
-| 2 | Booking & money correctness | `[ ]` |
+| 2 | Booking & money correctness | `[~]` |
 | 3 | Monetization (payouts, ledger, commission) | `[ ]` |
 | 4 | Scale & revenue expansion | `[ ]` |
 
@@ -635,6 +664,8 @@ commission rate/model, deposit model, payout cadence, KYC approach (see
 |---|---|---|
 | 1.0 | 2026-10-13 | Initial phased implementation plan from verified baseline + PRD + architecture |
 | 1.1 | 2026-10-13 | Phase 1 (Harden) implemented and locally verified: test harness, CI workflow, Docker/compose, auth lifecycle (refresh/verify/reset), Redis-backed rate limiting, request IDs + Sentry wiring, OpenAPI/Swagger, audit foundation |
+| 1.2 | 2026-10-14 | Phase 2 split into sub-phases 2A–2F; decisions recorded (Stripe Tax last, advisory xact lock for availability, global env fee/deposit defaults) |
+| 1.3 | 2026-10-14 | Sub-phase 2A complete: `GearAvailabilityBlock` + migration, half-open `rangesOverlap` util, `GET /gear/:id/availability`, provider block CRUD, advisory-lock overlap check in `createRentalOrder` (global stock counter retired); unit + integration tests green |
 
 ---
 

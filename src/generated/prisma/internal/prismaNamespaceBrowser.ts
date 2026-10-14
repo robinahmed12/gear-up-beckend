@@ -57,6 +57,7 @@ export const ModelName = {
   RentalOrder: 'RentalOrder',
   Payment: 'Payment',
   Review: 'Review',
+  GearAvailabilityBlock: 'GearAvailabilityBlock',
   Session: 'Session',
   VerificationToken: 'VerificationToken',
   AuditLog: 'AuditLog'
@@ -171,6 +172,19 @@ export const ReviewScalarFieldEnum = {
 } as const
 
 export type ReviewScalarFieldEnum = (typeof ReviewScalarFieldEnum)[keyof typeof ReviewScalarFieldEnum]
+
+
+export const GearAvailabilityBlockScalarFieldEnum = {
+  id: 'id',
+  gearId: 'gearId',
+  startDate: 'startDate',
+  endDate: 'endDate',
+  reason: 'reason',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type GearAvailabilityBlockScalarFieldEnum = (typeof GearAvailabilityBlockScalarFieldEnum)[keyof typeof GearAvailabilityBlockScalarFieldEnum]
 
 
 export const SessionScalarFieldEnum = {

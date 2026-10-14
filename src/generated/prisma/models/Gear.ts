@@ -300,6 +300,7 @@ export type GearWhereInput = {
   provider?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   rentalOrders?: Prisma.RentalOrderListRelationFilter
   reviews?: Prisma.ReviewListRelationFilter
+  availabilityBlocks?: Prisma.GearAvailabilityBlockListRelationFilter
 }
 
 export type GearOrderByWithRelationInput = {
@@ -321,6 +322,7 @@ export type GearOrderByWithRelationInput = {
   provider?: Prisma.UserOrderByWithRelationInput
   rentalOrders?: Prisma.RentalOrderOrderByRelationAggregateInput
   reviews?: Prisma.ReviewOrderByRelationAggregateInput
+  availabilityBlocks?: Prisma.GearAvailabilityBlockOrderByRelationAggregateInput
 }
 
 export type GearWhereUniqueInput = Prisma.AtLeast<{
@@ -345,6 +347,7 @@ export type GearWhereUniqueInput = Prisma.AtLeast<{
   provider?: Prisma.XOR<Prisma.UserScalarRelationFilter, Prisma.UserWhereInput>
   rentalOrders?: Prisma.RentalOrderListRelationFilter
   reviews?: Prisma.ReviewListRelationFilter
+  availabilityBlocks?: Prisma.GearAvailabilityBlockListRelationFilter
 }, "id">
 
 export type GearOrderByWithAggregationInput = {
@@ -406,6 +409,7 @@ export type GearCreateInput = {
   provider: Prisma.UserCreateNestedOneWithoutGearItemsInput
   rentalOrders?: Prisma.RentalOrderCreateNestedManyWithoutGearInput
   reviews?: Prisma.ReviewCreateNestedManyWithoutGearInput
+  availabilityBlocks?: Prisma.GearAvailabilityBlockCreateNestedManyWithoutGearInput
 }
 
 export type GearUncheckedCreateInput = {
@@ -425,6 +429,7 @@ export type GearUncheckedCreateInput = {
   providerId: string
   rentalOrders?: Prisma.RentalOrderUncheckedCreateNestedManyWithoutGearInput
   reviews?: Prisma.ReviewUncheckedCreateNestedManyWithoutGearInput
+  availabilityBlocks?: Prisma.GearAvailabilityBlockUncheckedCreateNestedManyWithoutGearInput
 }
 
 export type GearUpdateInput = {
@@ -444,6 +449,7 @@ export type GearUpdateInput = {
   provider?: Prisma.UserUpdateOneRequiredWithoutGearItemsNestedInput
   rentalOrders?: Prisma.RentalOrderUpdateManyWithoutGearNestedInput
   reviews?: Prisma.ReviewUpdateManyWithoutGearNestedInput
+  availabilityBlocks?: Prisma.GearAvailabilityBlockUpdateManyWithoutGearNestedInput
 }
 
 export type GearUncheckedUpdateInput = {
@@ -463,6 +469,7 @@ export type GearUncheckedUpdateInput = {
   providerId?: Prisma.StringFieldUpdateOperationsInput | string
   rentalOrders?: Prisma.RentalOrderUncheckedUpdateManyWithoutGearNestedInput
   reviews?: Prisma.ReviewUncheckedUpdateManyWithoutGearNestedInput
+  availabilityBlocks?: Prisma.GearAvailabilityBlockUncheckedUpdateManyWithoutGearNestedInput
 }
 
 export type GearCreateManyInput = {
@@ -749,6 +756,20 @@ export type GearUpdateOneRequiredWithoutReviewsNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.GearUpdateToOneWithWhereWithoutReviewsInput, Prisma.GearUpdateWithoutReviewsInput>, Prisma.GearUncheckedUpdateWithoutReviewsInput>
 }
 
+export type GearCreateNestedOneWithoutAvailabilityBlocksInput = {
+  create?: Prisma.XOR<Prisma.GearCreateWithoutAvailabilityBlocksInput, Prisma.GearUncheckedCreateWithoutAvailabilityBlocksInput>
+  connectOrCreate?: Prisma.GearCreateOrConnectWithoutAvailabilityBlocksInput
+  connect?: Prisma.GearWhereUniqueInput
+}
+
+export type GearUpdateOneRequiredWithoutAvailabilityBlocksNestedInput = {
+  create?: Prisma.XOR<Prisma.GearCreateWithoutAvailabilityBlocksInput, Prisma.GearUncheckedCreateWithoutAvailabilityBlocksInput>
+  connectOrCreate?: Prisma.GearCreateOrConnectWithoutAvailabilityBlocksInput
+  upsert?: Prisma.GearUpsertWithoutAvailabilityBlocksInput
+  connect?: Prisma.GearWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.GearUpdateToOneWithWhereWithoutAvailabilityBlocksInput, Prisma.GearUpdateWithoutAvailabilityBlocksInput>, Prisma.GearUncheckedUpdateWithoutAvailabilityBlocksInput>
+}
+
 export type GearCreateWithoutProviderInput = {
   id?: string
   title: string
@@ -765,6 +786,7 @@ export type GearCreateWithoutProviderInput = {
   category: Prisma.CategoryCreateNestedOneWithoutGearItemsInput
   rentalOrders?: Prisma.RentalOrderCreateNestedManyWithoutGearInput
   reviews?: Prisma.ReviewCreateNestedManyWithoutGearInput
+  availabilityBlocks?: Prisma.GearAvailabilityBlockCreateNestedManyWithoutGearInput
 }
 
 export type GearUncheckedCreateWithoutProviderInput = {
@@ -783,6 +805,7 @@ export type GearUncheckedCreateWithoutProviderInput = {
   categoryId: string
   rentalOrders?: Prisma.RentalOrderUncheckedCreateNestedManyWithoutGearInput
   reviews?: Prisma.ReviewUncheckedCreateNestedManyWithoutGearInput
+  availabilityBlocks?: Prisma.GearAvailabilityBlockUncheckedCreateNestedManyWithoutGearInput
 }
 
 export type GearCreateOrConnectWithoutProviderInput = {
@@ -847,6 +870,7 @@ export type GearCreateWithoutCategoryInput = {
   provider: Prisma.UserCreateNestedOneWithoutGearItemsInput
   rentalOrders?: Prisma.RentalOrderCreateNestedManyWithoutGearInput
   reviews?: Prisma.ReviewCreateNestedManyWithoutGearInput
+  availabilityBlocks?: Prisma.GearAvailabilityBlockCreateNestedManyWithoutGearInput
 }
 
 export type GearUncheckedCreateWithoutCategoryInput = {
@@ -865,6 +889,7 @@ export type GearUncheckedCreateWithoutCategoryInput = {
   providerId: string
   rentalOrders?: Prisma.RentalOrderUncheckedCreateNestedManyWithoutGearInput
   reviews?: Prisma.ReviewUncheckedCreateNestedManyWithoutGearInput
+  availabilityBlocks?: Prisma.GearAvailabilityBlockUncheckedCreateNestedManyWithoutGearInput
 }
 
 export type GearCreateOrConnectWithoutCategoryInput = {
@@ -909,6 +934,7 @@ export type GearCreateWithoutRentalOrdersInput = {
   category: Prisma.CategoryCreateNestedOneWithoutGearItemsInput
   provider: Prisma.UserCreateNestedOneWithoutGearItemsInput
   reviews?: Prisma.ReviewCreateNestedManyWithoutGearInput
+  availabilityBlocks?: Prisma.GearAvailabilityBlockCreateNestedManyWithoutGearInput
 }
 
 export type GearUncheckedCreateWithoutRentalOrdersInput = {
@@ -927,6 +953,7 @@ export type GearUncheckedCreateWithoutRentalOrdersInput = {
   categoryId: string
   providerId: string
   reviews?: Prisma.ReviewUncheckedCreateNestedManyWithoutGearInput
+  availabilityBlocks?: Prisma.GearAvailabilityBlockUncheckedCreateNestedManyWithoutGearInput
 }
 
 export type GearCreateOrConnectWithoutRentalOrdersInput = {
@@ -961,6 +988,7 @@ export type GearUpdateWithoutRentalOrdersInput = {
   category?: Prisma.CategoryUpdateOneRequiredWithoutGearItemsNestedInput
   provider?: Prisma.UserUpdateOneRequiredWithoutGearItemsNestedInput
   reviews?: Prisma.ReviewUpdateManyWithoutGearNestedInput
+  availabilityBlocks?: Prisma.GearAvailabilityBlockUpdateManyWithoutGearNestedInput
 }
 
 export type GearUncheckedUpdateWithoutRentalOrdersInput = {
@@ -979,6 +1007,7 @@ export type GearUncheckedUpdateWithoutRentalOrdersInput = {
   categoryId?: Prisma.StringFieldUpdateOperationsInput | string
   providerId?: Prisma.StringFieldUpdateOperationsInput | string
   reviews?: Prisma.ReviewUncheckedUpdateManyWithoutGearNestedInput
+  availabilityBlocks?: Prisma.GearAvailabilityBlockUncheckedUpdateManyWithoutGearNestedInput
 }
 
 export type GearCreateWithoutReviewsInput = {
@@ -997,6 +1026,7 @@ export type GearCreateWithoutReviewsInput = {
   category: Prisma.CategoryCreateNestedOneWithoutGearItemsInput
   provider: Prisma.UserCreateNestedOneWithoutGearItemsInput
   rentalOrders?: Prisma.RentalOrderCreateNestedManyWithoutGearInput
+  availabilityBlocks?: Prisma.GearAvailabilityBlockCreateNestedManyWithoutGearInput
 }
 
 export type GearUncheckedCreateWithoutReviewsInput = {
@@ -1015,6 +1045,7 @@ export type GearUncheckedCreateWithoutReviewsInput = {
   categoryId: string
   providerId: string
   rentalOrders?: Prisma.RentalOrderUncheckedCreateNestedManyWithoutGearInput
+  availabilityBlocks?: Prisma.GearAvailabilityBlockUncheckedCreateNestedManyWithoutGearInput
 }
 
 export type GearCreateOrConnectWithoutReviewsInput = {
@@ -1049,6 +1080,7 @@ export type GearUpdateWithoutReviewsInput = {
   category?: Prisma.CategoryUpdateOneRequiredWithoutGearItemsNestedInput
   provider?: Prisma.UserUpdateOneRequiredWithoutGearItemsNestedInput
   rentalOrders?: Prisma.RentalOrderUpdateManyWithoutGearNestedInput
+  availabilityBlocks?: Prisma.GearAvailabilityBlockUpdateManyWithoutGearNestedInput
 }
 
 export type GearUncheckedUpdateWithoutReviewsInput = {
@@ -1067,6 +1099,99 @@ export type GearUncheckedUpdateWithoutReviewsInput = {
   categoryId?: Prisma.StringFieldUpdateOperationsInput | string
   providerId?: Prisma.StringFieldUpdateOperationsInput | string
   rentalOrders?: Prisma.RentalOrderUncheckedUpdateManyWithoutGearNestedInput
+  availabilityBlocks?: Prisma.GearAvailabilityBlockUncheckedUpdateManyWithoutGearNestedInput
+}
+
+export type GearCreateWithoutAvailabilityBlocksInput = {
+  id?: string
+  title: string
+  description: string
+  brand?: string | null
+  pricePerDay: runtime.Decimal | runtime.DecimalJsLike | number | string
+  stock?: number
+  isAvailable?: boolean
+  images?: Prisma.GearCreateimagesInput | string[]
+  averageRating?: number
+  reviewCount?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  category: Prisma.CategoryCreateNestedOneWithoutGearItemsInput
+  provider: Prisma.UserCreateNestedOneWithoutGearItemsInput
+  rentalOrders?: Prisma.RentalOrderCreateNestedManyWithoutGearInput
+  reviews?: Prisma.ReviewCreateNestedManyWithoutGearInput
+}
+
+export type GearUncheckedCreateWithoutAvailabilityBlocksInput = {
+  id?: string
+  title: string
+  description: string
+  brand?: string | null
+  pricePerDay: runtime.Decimal | runtime.DecimalJsLike | number | string
+  stock?: number
+  isAvailable?: boolean
+  images?: Prisma.GearCreateimagesInput | string[]
+  averageRating?: number
+  reviewCount?: number
+  createdAt?: Date | string
+  updatedAt?: Date | string
+  categoryId: string
+  providerId: string
+  rentalOrders?: Prisma.RentalOrderUncheckedCreateNestedManyWithoutGearInput
+  reviews?: Prisma.ReviewUncheckedCreateNestedManyWithoutGearInput
+}
+
+export type GearCreateOrConnectWithoutAvailabilityBlocksInput = {
+  where: Prisma.GearWhereUniqueInput
+  create: Prisma.XOR<Prisma.GearCreateWithoutAvailabilityBlocksInput, Prisma.GearUncheckedCreateWithoutAvailabilityBlocksInput>
+}
+
+export type GearUpsertWithoutAvailabilityBlocksInput = {
+  update: Prisma.XOR<Prisma.GearUpdateWithoutAvailabilityBlocksInput, Prisma.GearUncheckedUpdateWithoutAvailabilityBlocksInput>
+  create: Prisma.XOR<Prisma.GearCreateWithoutAvailabilityBlocksInput, Prisma.GearUncheckedCreateWithoutAvailabilityBlocksInput>
+  where?: Prisma.GearWhereInput
+}
+
+export type GearUpdateToOneWithWhereWithoutAvailabilityBlocksInput = {
+  where?: Prisma.GearWhereInput
+  data: Prisma.XOR<Prisma.GearUpdateWithoutAvailabilityBlocksInput, Prisma.GearUncheckedUpdateWithoutAvailabilityBlocksInput>
+}
+
+export type GearUpdateWithoutAvailabilityBlocksInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  brand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pricePerDay?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  stock?: Prisma.IntFieldUpdateOperationsInput | number
+  isAvailable?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  images?: Prisma.GearUpdateimagesInput | string[]
+  averageRating?: Prisma.FloatFieldUpdateOperationsInput | number
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  category?: Prisma.CategoryUpdateOneRequiredWithoutGearItemsNestedInput
+  provider?: Prisma.UserUpdateOneRequiredWithoutGearItemsNestedInput
+  rentalOrders?: Prisma.RentalOrderUpdateManyWithoutGearNestedInput
+  reviews?: Prisma.ReviewUpdateManyWithoutGearNestedInput
+}
+
+export type GearUncheckedUpdateWithoutAvailabilityBlocksInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  title?: Prisma.StringFieldUpdateOperationsInput | string
+  description?: Prisma.StringFieldUpdateOperationsInput | string
+  brand?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pricePerDay?: Prisma.DecimalFieldUpdateOperationsInput | runtime.Decimal | runtime.DecimalJsLike | number | string
+  stock?: Prisma.IntFieldUpdateOperationsInput | number
+  isAvailable?: Prisma.BoolFieldUpdateOperationsInput | boolean
+  images?: Prisma.GearUpdateimagesInput | string[]
+  averageRating?: Prisma.FloatFieldUpdateOperationsInput | number
+  reviewCount?: Prisma.IntFieldUpdateOperationsInput | number
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  categoryId?: Prisma.StringFieldUpdateOperationsInput | string
+  providerId?: Prisma.StringFieldUpdateOperationsInput | string
+  rentalOrders?: Prisma.RentalOrderUncheckedUpdateManyWithoutGearNestedInput
+  reviews?: Prisma.ReviewUncheckedUpdateManyWithoutGearNestedInput
 }
 
 export type GearCreateManyProviderInput = {
@@ -1101,6 +1226,7 @@ export type GearUpdateWithoutProviderInput = {
   category?: Prisma.CategoryUpdateOneRequiredWithoutGearItemsNestedInput
   rentalOrders?: Prisma.RentalOrderUpdateManyWithoutGearNestedInput
   reviews?: Prisma.ReviewUpdateManyWithoutGearNestedInput
+  availabilityBlocks?: Prisma.GearAvailabilityBlockUpdateManyWithoutGearNestedInput
 }
 
 export type GearUncheckedUpdateWithoutProviderInput = {
@@ -1119,6 +1245,7 @@ export type GearUncheckedUpdateWithoutProviderInput = {
   categoryId?: Prisma.StringFieldUpdateOperationsInput | string
   rentalOrders?: Prisma.RentalOrderUncheckedUpdateManyWithoutGearNestedInput
   reviews?: Prisma.ReviewUncheckedUpdateManyWithoutGearNestedInput
+  availabilityBlocks?: Prisma.GearAvailabilityBlockUncheckedUpdateManyWithoutGearNestedInput
 }
 
 export type GearUncheckedUpdateManyWithoutProviderInput = {
@@ -1169,6 +1296,7 @@ export type GearUpdateWithoutCategoryInput = {
   provider?: Prisma.UserUpdateOneRequiredWithoutGearItemsNestedInput
   rentalOrders?: Prisma.RentalOrderUpdateManyWithoutGearNestedInput
   reviews?: Prisma.ReviewUpdateManyWithoutGearNestedInput
+  availabilityBlocks?: Prisma.GearAvailabilityBlockUpdateManyWithoutGearNestedInput
 }
 
 export type GearUncheckedUpdateWithoutCategoryInput = {
@@ -1187,6 +1315,7 @@ export type GearUncheckedUpdateWithoutCategoryInput = {
   providerId?: Prisma.StringFieldUpdateOperationsInput | string
   rentalOrders?: Prisma.RentalOrderUncheckedUpdateManyWithoutGearNestedInput
   reviews?: Prisma.ReviewUncheckedUpdateManyWithoutGearNestedInput
+  availabilityBlocks?: Prisma.GearAvailabilityBlockUncheckedUpdateManyWithoutGearNestedInput
 }
 
 export type GearUncheckedUpdateManyWithoutCategoryInput = {
@@ -1213,11 +1342,13 @@ export type GearUncheckedUpdateManyWithoutCategoryInput = {
 export type GearCountOutputType = {
   rentalOrders: number
   reviews: number
+  availabilityBlocks: number
 }
 
 export type GearCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   rentalOrders?: boolean | GearCountOutputTypeCountRentalOrdersArgs
   reviews?: boolean | GearCountOutputTypeCountReviewsArgs
+  availabilityBlocks?: boolean | GearCountOutputTypeCountAvailabilityBlocksArgs
 }
 
 /**
@@ -1244,6 +1375,13 @@ export type GearCountOutputTypeCountReviewsArgs<ExtArgs extends runtime.Types.Ex
   where?: Prisma.ReviewWhereInput
 }
 
+/**
+ * GearCountOutputType without action
+ */
+export type GearCountOutputTypeCountAvailabilityBlocksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.GearAvailabilityBlockWhereInput
+}
+
 
 export type GearSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -1264,6 +1402,7 @@ export type GearSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   provider?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   rentalOrders?: boolean | Prisma.Gear$rentalOrdersArgs<ExtArgs>
   reviews?: boolean | Prisma.Gear$reviewsArgs<ExtArgs>
+  availabilityBlocks?: boolean | Prisma.Gear$availabilityBlocksArgs<ExtArgs>
   _count?: boolean | Prisma.GearCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["gear"]>
 
@@ -1328,6 +1467,7 @@ export type GearInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   provider?: boolean | Prisma.UserDefaultArgs<ExtArgs>
   rentalOrders?: boolean | Prisma.Gear$rentalOrdersArgs<ExtArgs>
   reviews?: boolean | Prisma.Gear$reviewsArgs<ExtArgs>
+  availabilityBlocks?: boolean | Prisma.Gear$availabilityBlocksArgs<ExtArgs>
   _count?: boolean | Prisma.GearCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type GearIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1346,6 +1486,7 @@ export type $GearPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     provider: Prisma.$UserPayload<ExtArgs>
     rentalOrders: Prisma.$RentalOrderPayload<ExtArgs>[]
     reviews: Prisma.$ReviewPayload<ExtArgs>[]
+    availabilityBlocks: Prisma.$GearAvailabilityBlockPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -1760,6 +1901,7 @@ export interface Prisma__GearClient<T, Null = never, ExtArgs extends runtime.Typ
   provider<T extends Prisma.UserDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UserDefaultArgs<ExtArgs>>): Prisma.Prisma__UserClient<runtime.Types.Result.GetResult<Prisma.$UserPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   rentalOrders<T extends Prisma.Gear$rentalOrdersArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Gear$rentalOrdersArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$RentalOrderPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   reviews<T extends Prisma.Gear$reviewsArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Gear$reviewsArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$ReviewPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  availabilityBlocks<T extends Prisma.Gear$availabilityBlocksArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Gear$availabilityBlocksArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$GearAvailabilityBlockPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -2249,6 +2391,30 @@ export type Gear$reviewsArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
   take?: number
   skip?: number
   distinct?: Prisma.ReviewScalarFieldEnum | Prisma.ReviewScalarFieldEnum[]
+}
+
+/**
+ * Gear.availabilityBlocks
+ */
+export type Gear$availabilityBlocksArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the GearAvailabilityBlock
+   */
+  select?: Prisma.GearAvailabilityBlockSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the GearAvailabilityBlock
+   */
+  omit?: Prisma.GearAvailabilityBlockOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.GearAvailabilityBlockInclude<ExtArgs> | null
+  where?: Prisma.GearAvailabilityBlockWhereInput
+  orderBy?: Prisma.GearAvailabilityBlockOrderByWithRelationInput | Prisma.GearAvailabilityBlockOrderByWithRelationInput[]
+  cursor?: Prisma.GearAvailabilityBlockWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.GearAvailabilityBlockScalarFieldEnum | Prisma.GearAvailabilityBlockScalarFieldEnum[]
 }
 
 /**

@@ -72,6 +72,11 @@ export type Payment = Prisma.PaymentModel
  */
 export type Review = Prisma.ReviewModel
 /**
+ * Model GearAvailabilityBlock
+ * 
+ */
+export type GearAvailabilityBlock = Prisma.GearAvailabilityBlockModel
+/**
  * Model Session
  * 
  */

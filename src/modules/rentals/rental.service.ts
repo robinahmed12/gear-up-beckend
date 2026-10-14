@@ -6,6 +6,10 @@ import { ConflictError } from '../../errors/ConflictError.js';
 import { RentalStatus, assertValidTransition } from '../../constants/orderStatus.js';
 import { calculateTotalDays } from '../../utils/rentalDates.js';
 import {
+  acquireGearBookingLock,
+  assertGearAvailable,
+} from '../availability/availability.service.js';
+import {
   getPrismaPagination,
   buildPaginationMeta,
   PaginationMeta,
@@ -61,21 +65,19 @@ export const createRentalOrder = async (customerId: string, input: CreateRentalI
   const pricePerDay = gear.pricePerDay;
   const totalAmount = Number(pricePerDay) * input.quantity * totalDays;
 
-  // The atomic guard against overselling: `updateMany` with `stock: { gte:
-  // quantity }` in the WHERE clause is evaluated by Postgres as a single
-  // atomic operation. If two customers race for the last unit, only one
-  // update's WHERE clause will still match by the time it executes — the
-  // other gets `count: 0` and a clean ConflictError, with no explicit row
-  // locking or SELECT-then-UPDATE race condition required.
+  // Availability is date-scoped: a gear item's `stock` is the number of
+  // identical units, and an order reserves `quantity` of them for the
+  // half-open window [startDate, endDate). Instead of decrementing a global
+  // stock counter, we serialise bookings per gear with an advisory lock and
+  // then count overlapping reserving orders — two requests for the same
+  // window can never both pass the count.
   return prisma.$transaction(async (tx) => {
-    const stockUpdate = await tx.gear.updateMany({
-      where: { id: input.gearId, stock: { gte: input.quantity }, isAvailable: true },
-      data: { stock: { decrement: input.quantity } },
+    await acquireGearBookingLock(tx, gear.id);
+    await assertGearAvailable(tx, gear, {
+      startDate: input.startDate,
+      endDate: input.endDate,
+      quantity: input.quantity,
     });
-
-    if (stockUpdate.count === 0) {
-      throw new ConflictError('Not enough stock available for the requested quantity');
-    }
 
     const order = await tx.rentalOrder.create({
       data: {
@@ -211,8 +213,6 @@ export const updateOrderStatus = async (
     select: {
       id: true,
       status: true,
-      quantity: true,
-      gearId: true,
       gear: { select: { providerId: true } },
     },
   });
@@ -227,23 +227,9 @@ export const updateOrderStatus = async (
 
   assertValidTransition(order.status, input.status);
 
-  // Returning the gear makes its stock available again for future orders.
-  // Everything else is a plain status update with no side effects.
-  if (input.status === 'RETURNED') {
-    return prisma.$transaction(async (tx) => {
-      await tx.gear.update({
-        where: { id: order.gearId },
-        data: { stock: { increment: order.quantity } },
-      });
-
-      return tx.rentalOrder.update({
-        where: { id: orderId },
-        data: { status: RentalStatus.RETURNED },
-        select: rentalSelect,
-      });
-    });
-  }
-
+  // No stock counter to touch: availability is derived from the statuses of
+  // date-scoped orders (see RESERVING_STATUSES). Once an order leaves the
+  // reserving set (RETURNED/CANCELLED), its window is automatically freed.
   return prisma.rentalOrder.update({
     where: { id: orderId },
     data: { status: input.status },
@@ -281,7 +267,7 @@ export const markOrderAsPaid = async (orderId: string) => {
 export const cancelRentalOrder = async (orderId: string, customerId: string) => {
   const order = await prisma.rentalOrder.findUnique({
     where: { id: orderId },
-    select: { id: true, status: true, quantity: true, gearId: true, customerId: true },
+    select: { id: true, status: true, customerId: true },
   });
 
   if (!order) {
@@ -294,16 +280,11 @@ export const cancelRentalOrder = async (orderId: string, customerId: string) => 
 
   assertValidTransition(order.status, RentalStatus.CANCELLED);
 
-  return prisma.$transaction(async (tx) => {
-    await tx.gear.update({
-      where: { id: order.gearId },
-      data: { stock: { increment: order.quantity } },
-    });
-
-    return tx.rentalOrder.update({
-      where: { id: orderId },
-      data: { status: RentalStatus.CANCELLED },
-      select: rentalSelect,
-    });
+  // CANCELLED drops out of RESERVING_STATUSES, so the date window this order
+  // held is released for other customers without any stock bookkeeping.
+  return prisma.rentalOrder.update({
+    where: { id: orderId },
+    data: { status: RentalStatus.CANCELLED },
+    select: rentalSelect,
   });
 };

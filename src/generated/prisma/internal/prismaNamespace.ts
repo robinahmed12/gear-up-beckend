@@ -390,6 +390,7 @@ export const ModelName = {
   RentalOrder: 'RentalOrder',
   Payment: 'Payment',
   Review: 'Review',
+  GearAvailabilityBlock: 'GearAvailabilityBlock',
   Session: 'Session',
   VerificationToken: 'VerificationToken',
   AuditLog: 'AuditLog'
@@ -408,7 +409,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "user" | "category" | "gear" | "rentalOrder" | "payment" | "review" | "session" | "verificationToken" | "auditLog"
+    modelProps: "user" | "category" | "gear" | "rentalOrder" | "payment" | "review" | "gearAvailabilityBlock" | "session" | "verificationToken" | "auditLog"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -856,6 +857,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    GearAvailabilityBlock: {
+      payload: Prisma.$GearAvailabilityBlockPayload<ExtArgs>
+      fields: Prisma.GearAvailabilityBlockFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.GearAvailabilityBlockFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GearAvailabilityBlockPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.GearAvailabilityBlockFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GearAvailabilityBlockPayload>
+        }
+        findFirst: {
+          args: Prisma.GearAvailabilityBlockFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GearAvailabilityBlockPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.GearAvailabilityBlockFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GearAvailabilityBlockPayload>
+        }
+        findMany: {
+          args: Prisma.GearAvailabilityBlockFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GearAvailabilityBlockPayload>[]
+        }
+        create: {
+          args: Prisma.GearAvailabilityBlockCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GearAvailabilityBlockPayload>
+        }
+        createMany: {
+          args: Prisma.GearAvailabilityBlockCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.GearAvailabilityBlockCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GearAvailabilityBlockPayload>[]
+        }
+        delete: {
+          args: Prisma.GearAvailabilityBlockDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GearAvailabilityBlockPayload>
+        }
+        update: {
+          args: Prisma.GearAvailabilityBlockUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GearAvailabilityBlockPayload>
+        }
+        deleteMany: {
+          args: Prisma.GearAvailabilityBlockDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.GearAvailabilityBlockUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.GearAvailabilityBlockUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GearAvailabilityBlockPayload>[]
+        }
+        upsert: {
+          args: Prisma.GearAvailabilityBlockUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$GearAvailabilityBlockPayload>
+        }
+        aggregate: {
+          args: Prisma.GearAvailabilityBlockAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateGearAvailabilityBlock>
+        }
+        groupBy: {
+          args: Prisma.GearAvailabilityBlockGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.GearAvailabilityBlockGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.GearAvailabilityBlockCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.GearAvailabilityBlockCountAggregateOutputType> | number
+        }
+      }
+    }
     Session: {
       payload: Prisma.$SessionPayload<ExtArgs>
       fields: Prisma.SessionFieldRefs
@@ -1210,6 +1285,19 @@ export const ReviewScalarFieldEnum = {
 } as const
 
 export type ReviewScalarFieldEnum = (typeof ReviewScalarFieldEnum)[keyof typeof ReviewScalarFieldEnum]
+
+
+export const GearAvailabilityBlockScalarFieldEnum = {
+  id: 'id',
+  gearId: 'gearId',
+  startDate: 'startDate',
+  endDate: 'endDate',
+  reason: 'reason',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type GearAvailabilityBlockScalarFieldEnum = (typeof GearAvailabilityBlockScalarFieldEnum)[keyof typeof GearAvailabilityBlockScalarFieldEnum]
 
 
 export const SessionScalarFieldEnum = {
@@ -1591,6 +1679,7 @@ export type GlobalOmitConfig = {
   rentalOrder?: Prisma.RentalOrderOmit
   payment?: Prisma.PaymentOmit
   review?: Prisma.ReviewOmit
+  gearAvailabilityBlock?: Prisma.GearAvailabilityBlockOmit
   session?: Prisma.SessionOmit
   verificationToken?: Prisma.VerificationTokenOmit
   auditLog?: Prisma.AuditLogOmit

@@ -138,6 +138,7 @@ model Gear {
 
   rentalOrders RentalOrder[]
   reviews      Review[]
+  availabilityBlocks GearAvailabilityBlock[]
 
   // Supports the "browse/filter gear" endpoints: by category, by
   // provider's own inventory view, by availability, and price-range
@@ -186,6 +187,10 @@ model RentalOrder {
   @@index([gearId])
   @@index([status])
   @@index([startDate, endDate])
+  // Drives the overlap query used to enforce date-scoped availability:
+  // "quantity of reserving orders for this gear whose [start,end) intersects
+  // the requested window".
+  @@index([gearId, status, startDate, endDate])
   @@map("rental_orders")
 }
 
@@ -238,6 +243,26 @@ model Review {
   @@unique([customerId, gearId])
   @@index([gearId])
   @@map("reviews")
+}
+
+// ─────────────────────────────────────────────────────────────
+// Availability
+// ─────────────────────────────────────────────────────────────
+
+model GearAvailabilityBlock {
+  id        String   @id @default(uuid())
+  gearId    String
+  gear      Gear     @relation(fields: [gearId], references: [id], onDelete: Cascade)
+  // Half-open window [startDate, endDate): the gear is fully unavailable
+  // (all units) to customers for any rental that intersects this range.
+  startDate DateTime
+  endDate   DateTime
+  reason    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([gearId, startDate, endDate])
+  @@map("gear_availability_blocks")
 }
 
 // ─────────────────────────────────────────────────────────────

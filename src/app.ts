@@ -16,6 +16,8 @@ import authRoutes from './modules/auth/auth.routes';
 import gearRoutes from './modules/gear/gear.routes.js';
 import providerGearRoutes from './modules/gear/provider-gear.routes.js';
 import adminGearRoutes from './modules/gear/admin-gear.routes.js';
+import gearAvailabilityRoutes from './modules/availability/availability.routes.js';
+import providerAvailabilityRoutes from './modules/availability/provider-availability.routes.js';
 import rentalRoutes from './modules/rentals/rental.routes.js';
 import providerOrderRoutes from './modules/rentals/provider-order.routes.js';
 import adminRentalRoutes from './modules/rentals/admin-rental.routes.js';
@@ -90,6 +92,8 @@ app.get('/api/health/ready', async (_req: Request, res: Response) => {
 
 // --- Feature routes ---
 app.use('/api/auth', authRoutes);
+app.use('/api/gear/:id/availability', gearAvailabilityRoutes);
+app.use('/api/provider/gear/:id/blocks', providerAvailabilityRoutes);
 app.use('/api/gear', gearRoutes);
 app.use('/api/provider/gear', providerGearRoutes);
 app.use('/api/rentals', rentalRoutes);
