@@ -28,6 +28,10 @@ export const createRateLimiter = (max: number, prefix: string) =>
     standardHeaders: true,
     legacyHeaders: false,
     store: buildStore(prefix),
+    // Fail open: if Redis is unreachable/erroring, allow the request through
+    // instead of failing the whole API with a 500. Availability matters more
+    // than strict limiting for a transient store outage.
+    passOnStoreError: true,
     message: {
       success: false,
       message: 'Too many requests, please try again later.',

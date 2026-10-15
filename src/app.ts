@@ -32,6 +32,12 @@ import paymentWebhookRoutes from './modules/payments/payment.webhook.js';
 
 export const app: Application = express();
 
+// Behind a single reverse proxy (Vercel/Heroku/nginx), trust the platform's
+// X-Forwarded-For so `req.ip` is the real client and express-rate-limit can
+// key on it. Must be a hop count (1), not `true` — express-rate-limit rejects
+// a permissive `true` and throws ERR_ERL_UNEXPECTED_X_FORWARDED_FOR otherwise.
+app.set('trust proxy', 1);
+
 // --- Global middleware ---
 app.use(requestIdMiddleware);
 app.use(helmet());
