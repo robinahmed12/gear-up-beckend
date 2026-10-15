@@ -27,6 +27,26 @@ export const registerSchema = z.object({
   phone: z.string().trim().min(6).max(20).optional(),
 });
 
+export const verifyRegistrationOtpSchema = z.object({
+  email: z
+    .string({ required_error: 'Email is required' })
+    .trim()
+    .toLowerCase()
+    .email('Must be a valid email address'),
+  otp: z
+    .string({ required_error: 'Verification code is required' })
+    .trim()
+    .regex(/^\d{6}$/, 'Verification code must be 6 digits'),
+});
+
+export const resendRegistrationOtpSchema = z.object({
+  email: z
+    .string({ required_error: 'Email is required' })
+    .trim()
+    .toLowerCase()
+    .email('Must be a valid email address'),
+});
+
 export const loginSchema = z.object({
   email: z
     .string({ required_error: 'Email is required' })
@@ -63,6 +83,8 @@ export const changePasswordSchema = z
 
 // schema validation
 export type RegisterInput = z.infer<typeof registerSchema>;
+export type VerifyRegistrationOtpInput = z.infer<typeof verifyRegistrationOtpSchema>;
+export type ResendRegistrationOtpInput = z.infer<typeof resendRegistrationOtpSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;

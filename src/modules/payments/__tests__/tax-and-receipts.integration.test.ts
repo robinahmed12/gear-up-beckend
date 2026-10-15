@@ -129,7 +129,7 @@ suite('tax & receipts (integration)', () => {
     });
 
     constructEventMock = vi.spyOn(stripe.webhooks, 'constructEvent').mockImplementation(() => ({}));
-    vi.spyOn(mailerModule.mailTransport, 'sendMail').mockResolvedValue({} as never);
+    vi.spyOn(mailerModule.mailer, 'sendMail').mockResolvedValue(true);
 
     const category = await prisma.category.create({ data: { name: `Tax ${Date.now()}` } });
     categoryId = category.id;
@@ -215,7 +215,7 @@ suite('tax & receipts (integration)', () => {
       ).status,
     ).toBe(200);
 
-    const sendMailMock = (await import('../../../config/mailer.js')).mailTransport.sendMail as any;
+    const sendMailMock = (await import('../../../config/mailer.js')).mailer.sendMail as any;
     const receiptCall = sendMailMock.mock.calls.find(
       (call: any[]) => typeof call[0]?.subject === 'string' && /receipt/i.test(call[0].subject),
     );

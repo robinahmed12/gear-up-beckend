@@ -7,6 +7,8 @@ import {
   loginSchema,
   refreshTokenSchema,
   tokenSchema,
+  verifyRegistrationOtpSchema,
+  resendRegistrationOtpSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
   updateProfileSchema,
@@ -17,17 +19,23 @@ import { verifyTokenMiddleware } from '../../middlewares/auth.middleware';
 const router = Router();
 // auth related endpoint
 router.post('/register', authRateLimiter, validate(registerSchema), authController.register);
+router.post(
+  '/register/verify-otp',
+  authRateLimiter,
+  validate(verifyRegistrationOtpSchema),
+  authController.verifyRegistrationOtp,
+);
+router.post(
+  '/register/resend-otp',
+  authRateLimiter,
+  validate(resendRegistrationOtpSchema),
+  authController.resendRegistrationOtp,
+);
 router.post('/login', authRateLimiter, validate(loginSchema), authController.login);
 router.post('/refresh', authRateLimiter, validate(refreshTokenSchema), authController.refresh);
 router.post('/logout', authRateLimiter, validate(refreshTokenSchema), authController.logout);
 router.post('/logout-all', verifyTokenMiddleware, authController.logoutAll);
 router.post('/verify-email', authRateLimiter, validate(tokenSchema), authController.verifyEmail);
-router.post(
-  '/resend-verification',
-  verifyTokenMiddleware,
-  authRateLimiter,
-  authController.resendVerification,
-);
 router.post(
   '/forgot-password',
   authRateLimiter,

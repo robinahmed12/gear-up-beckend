@@ -10,6 +10,8 @@ import {
   loginSchema,
   refreshTokenSchema,
   tokenSchema,
+  verifyRegistrationOtpSchema,
+  resendRegistrationOtpSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
 } from '../modules/auth/auth.validation';
@@ -86,13 +88,35 @@ registry.registerPath({
   method: 'post',
   path: '/api/auth/register',
   tags: ['Auth'],
-  summary: 'Register as a customer or provider',
+  summary: 'Request an email verification code to register as a customer or provider',
   request: { body: jsonBody(registerSchema) },
   responses: {
-    201: jsonResponse(successResponse, 'Account created'),
+    201: jsonResponse(successResponse, 'Verification code sent'),
     ...errorResponses,
     409: jsonResponse(errorResponse, 'Email already registered'),
   },
+});
+
+registry.registerPath({
+  method: 'post',
+  path: '/api/auth/register/verify-otp',
+  tags: ['Auth'],
+  summary: 'Verify the registration code, create the account, and return tokens',
+  request: { body: jsonBody(verifyRegistrationOtpSchema) },
+  responses: {
+    201: jsonResponse(successResponse, 'Account created and email verified'),
+    ...errorResponses,
+    409: jsonResponse(errorResponse, 'Email already registered'),
+  },
+});
+
+registry.registerPath({
+  method: 'post',
+  path: '/api/auth/register/resend-otp',
+  tags: ['Auth'],
+  summary: 'Re-send the registration verification code',
+  request: { body: jsonBody(resendRegistrationOtpSchema) },
+  responses: { 200: jsonResponse(successResponse, 'New code sent'), ...errorResponses },
 });
 
 registry.registerPath({
@@ -138,15 +162,6 @@ registry.registerPath({
   summary: 'Verify an email address with a token',
   request: { body: jsonBody(tokenSchema) },
   responses: { 200: jsonResponse(successResponse, 'Email verified'), ...errorResponses },
-});
-
-registry.registerPath({
-  method: 'post',
-  path: '/api/auth/resend-verification',
-  tags: ['Auth'],
-  summary: 'Re-send the email verification message',
-  security: [{ bearerAuth: [] }],
-  responses: { 200: jsonResponse(successResponse, 'Verification email sent'), ...errorResponses },
 });
 
 registry.registerPath({

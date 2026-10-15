@@ -12,12 +12,35 @@ const sessionMeta = (req: Request): SessionMeta => ({
 
 // register user
 export const register = catchAsync(async (req: Request, res: Response) => {
-  const { user, token, refreshToken } = await authService.registerUser(req.body, sessionMeta(req));
+  const { email, devOtp } = await authService.requestRegistrationOtp(req.body);
 
   sendSuccess(res, {
     statusCode: 201,
-    message: 'Account created successfully. Please check your email to verify your account.',
+    message: 'Verification code sent. Check your email to finish creating your account.',
+    data: { email, devOtp },
+  });
+});
+
+export const verifyRegistrationOtp = catchAsync(async (req: Request, res: Response) => {
+  const { user, token, refreshToken } = await authService.verifyRegistrationOtp(
+    req.body.email,
+    req.body.otp,
+    sessionMeta(req),
+  );
+
+  sendSuccess(res, {
+    statusCode: 201,
+    message: 'Account created and email verified successfully',
     data: { user, token, refreshToken },
+  });
+});
+
+export const resendRegistrationOtp = catchAsync(async (req: Request, res: Response) => {
+  const { email, devOtp } = await authService.resendRegistrationOtp(req.body.email);
+
+  sendSuccess(res, {
+    message: 'A new verification code has been sent.',
+    data: { email, devOtp },
   });
 });
 
@@ -62,15 +85,6 @@ export const logoutAll = catchAsync(async (req: Request, res: Response) => {
 export const verifyEmail = catchAsync(async (req: Request, res: Response) => {
   await authService.verifyEmail(req.body.token);
   sendSuccess(res, { message: 'Email verified successfully' });
-});
-
-export const resendVerification = catchAsync(async (req: Request, res: Response) => {
-  if (!req.user) {
-    throw new UnauthorizedError('Authentication required');
-  }
-
-  await authService.resendVerification(req.user.id);
-  sendSuccess(res, { message: 'Verification email sent' });
 });
 
 export const forgotPassword = catchAsync(async (req: Request, res: Response) => {

@@ -27,6 +27,24 @@ export const verifyEmailTemplate = (
   };
 };
 
+export const verifyOtpTemplate = (
+  name: string,
+  otp: string,
+): { subject: string; html: string; text: string } => {
+  const minutes = Math.round(env.OTP_TTL_SECONDS / 60);
+  return {
+    subject: 'Your GearUp verification code',
+    html: layout(
+      'Confirm your email',
+      `<p>Hi ${name},</p>
+       <p>Use the code below to finish creating your GearUp account.</p>
+       <p style="font-size:28px;font-weight:700;letter-spacing:6px;margin:16px 0;">${otp}</p>
+       <p>This code expires in ${minutes} minutes. If you didn't try to create an account, you can ignore this email.</p>`,
+    ),
+    text: `Hi ${name}, your GearUp verification code is ${otp} (expires in ${minutes} minutes).`,
+  };
+};
+
 export const passwordResetTemplate = (
   name: string,
   token: string,

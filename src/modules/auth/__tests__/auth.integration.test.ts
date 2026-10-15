@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import request from 'supertest';
 import type { Application } from 'express';
 import type { PrismaClient } from '../../../generated/prisma/client.js';
@@ -16,6 +16,7 @@ suite('auth lifecycle (integration)', () => {
   let app: Application;
   let prisma: PrismaClient;
   let hashToken: (token: string) => string;
+  const sentMails: Array<{ to: string; subject: string; text?: string }> = [];
 
   const email = `user_${Date.now()}@example.com`;
   const password = 'Password123!';
@@ -32,6 +33,12 @@ suite('auth lifecycle (integration)', () => {
     const appModule = await import('../../../app.js');
     const prismaModule = await import('../../../config/prisma.js');
     const tokenModule = await import('../../../utils/tokens.js');
+    const mailerModule = await import('../../../config/mailer.js');
+
+    vi.spyOn(mailerModule.mailer, 'sendMail').mockImplementation(async (message) => {
+      sentMails.push({ to: message.to, subject: message.subject, text: message.text });
+      return true;
+    });
 
     app = appModule.app;
     prisma = prismaModule.prisma;
@@ -43,7 +50,7 @@ suite('auth lifecycle (integration)', () => {
     await stopTestDatabase();
   });
 
-  it('registers a new user, persists a hashed password, and issues tokens', async () => {
+  it('sends a registration code, then creates and verifies the account on OTP', async () => {
     const res = await http().post('/api/auth/register').send({
       name: 'Test User',
       email,
@@ -52,14 +59,39 @@ suite('auth lifecycle (integration)', () => {
     });
 
     expect(res.status).toBe(201);
-    expect(res.body.data.user.email).toBe(email);
-    expect(res.body.data.user.emailVerifiedAt).toBeNull();
-    expect(res.body.data.token).toBeTruthy();
-    expect(res.body.data.refreshToken).toBeTruthy();
+    expect(res.body.data.email).toBe(email);
+    expect(res.body.data.token).toBeUndefined();
+    expect(sentMails.some((mail) => mail.to === email)).toBe(true);
+
+    // No user row exists until the code is verified.
+    expect(await prisma.user.findUnique({ where: { email } })).toBeNull();
+
+    const otp = res.body.data.devOtp;
+    expect(otp).toMatch(/^\d{6}$/);
+
+    const verify = await http().post('/api/auth/register/verify-otp').send({ email, otp });
+    expect(verify.status).toBe(201);
+    expect(verify.body.data.user.emailVerifiedAt).not.toBeNull();
+    expect(verify.body.data.token).toBeTruthy();
+    expect(verify.body.data.refreshToken).toBeTruthy();
 
     const dbUser = await prisma.user.findUnique({ where: { email } });
     expect(dbUser).toBeTruthy();
     expect(dbUser?.password).not.toBe(password);
+  });
+
+  it('rejects an incorrect registration code', async () => {
+    const otherEmail = `bad_otp_${Date.now()}@example.com`;
+    await http()
+      .post('/api/auth/register')
+      .send({ name: 'Bad OTP', email: otherEmail, password, role: 'CUSTOMER' });
+
+    const res = await http()
+      .post('/api/auth/register/verify-otp')
+      .send({ email: otherEmail, otp: '000000' });
+
+    expect(res.status).toBe(401);
+    expect(await prisma.user.findUnique({ where: { email: otherEmail } })).toBeNull();
   });
 
   it('rejects a duplicate registration with 409', async () => {
@@ -72,7 +104,18 @@ suite('auth lifecycle (integration)', () => {
   });
 
   it('blocks an unverified user from a verified-only action with 403', async () => {
-    const login = await http().post('/api/auth/login').send({ email, password });
+    const unverifiedEmail = `unverified_${Date.now()}@example.com`;
+    const { hashPassword } = await import('../../../utils/password.js');
+    await prisma.user.create({
+      data: {
+        name: 'Unverified',
+        email: unverifiedEmail,
+        password: await hashPassword(password),
+        role: 'CUSTOMER',
+      },
+    });
+
+    const login = await http().post('/api/auth/login').send({ email: unverifiedEmail, password });
     expect(login.status).toBe(200);
 
     const res = await http()

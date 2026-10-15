@@ -68,9 +68,14 @@ const envSchema = z.object({
   // API server.
   FRONTEND_URL: z.string().default('http://localhost:3000'),
 
-  // Optional — when SMTP_HOST is unset the mailer uses a JSON transport
-  // that captures messages in the logs instead of sending them, so local
-  // dev and tests never require a real mail server.
+  // Optional — HTTP email API (Resend). Preferred when set because many
+  // hosts/ISPs block outbound SMTP ports entirely. Takes precedence over
+  // SMTP below.
+  RESEND_API_KEY: z.string().trim().optional(),
+
+  // Optional — when neither RESEND_API_KEY nor SMTP_HOST is set the mailer
+  // uses a JSON transport that captures messages in the logs instead of
+  // sending them, so local dev and tests never require a real mail server.
   SMTP_HOST: z.string().optional(),
   SMTP_PORT: z.coerce.number().default(587),
   SMTP_SECURE: booleanish.default(false),
@@ -78,14 +83,36 @@ const envSchema = z.object({
   SMTP_PASSWORD: z.string().optional(),
   MAIL_FROM: z.string().default('GearUp <no-reply@gearup.local>'),
 
-  // Optional — when set, rate limiting uses a Redis store so limits are
-  // shared across instances; otherwise an in-memory store is used.
+  // Optional — when set, Redis backs both the shared rate-limit counters and
+  // the registration OTP store. Provide either a full URL or the individual
+  // REDIS_* parts below (a URL is assembled at boot when both are absent).
   REDIS_URL: z.string().optional(),
+  REDIS_USER: z.string().optional(),
+  REDIS_PASSWORD: z.string().optional(),
+  REDIS_HOST: z.string().optional(),
+  REDIS_PORT: z.coerce.number().int().positive().optional(),
+
+  // Registration OTP lifetime + abuse limits.
+  OTP_TTL_SECONDS: z.coerce.number().int().positive().default(600),
+  OTP_MAX_ATTEMPTS: z.coerce.number().int().positive().default(5),
+  OTP_RESEND_COOLDOWN_SECONDS: z.coerce.number().int().nonnegative().default(60),
+
   SENTRY_DSN: z.string().optional(),
 
   RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(15 * 60 * 1000),
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(100),
   AUTH_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(10),
+}).transform((data) => {
+  // Assemble a Redis URL from the individual parts when a full URL wasn't
+  // supplied, so both `REDIS_URL=...` and separate REDIS_HOST/PORT/PASSWORD
+  // configurations work without extra code paths elsewhere.
+  if (!data.REDIS_URL && data.REDIS_HOST) {
+    const auth = data.REDIS_PASSWORD
+      ? `${encodeURIComponent(data.REDIS_USER ?? 'default')}:${encodeURIComponent(data.REDIS_PASSWORD)}@`
+      : '';
+    data.REDIS_URL = `redis://${auth}${data.REDIS_HOST}:${data.REDIS_PORT ?? 6379}`;
+  }
+  return data;
 });
 
 const parsed = envSchema.safeParse(process.env);

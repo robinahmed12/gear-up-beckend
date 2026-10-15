@@ -5,8 +5,17 @@ import { hashPassword, comparePassword } from '../../utils/password';
 import { signToken } from '../../utils/jwt';
 import { generateOpaqueToken, hashToken } from '../../utils/tokens';
 import { sendMail } from '../../config/mailer';
-import { verifyEmailTemplate, passwordResetTemplate } from '../../utils/emailTemplates';
+import { verifyOtpTemplate, passwordResetTemplate } from '../../utils/emailTemplates';
+import {
+  deletePendingRegistration,
+  generateOtp,
+  getPendingRegistration,
+  getResendCooldown,
+  savePendingRegistration,
+  setResendCooldown,
+} from '../../utils/registrationOtp';
 import { ConflictError } from '../../errors/ConflictError';
+import { TooManyRequestsError } from '../../errors/TooManyRequestsError';
 import { UnauthorizedError } from '../../errors/UnauthorizedError';
 import { NotFoundError } from '../../errors/NotFoundError';
 import { recordAudit } from '../../utils/auditLog';
@@ -30,7 +39,6 @@ const publicUserSelect = {
   createdAt: true,
 } as const;
 
-const EMAIL_VERIFY_TTL_MS = 24 * 60 * 60 * 1000;
 const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000;
 
 export interface SessionMeta {
@@ -64,56 +72,95 @@ const issueAuthTokens = async (
   return { token, refreshToken };
 };
 
-const sendVerificationEmail = async (user: {
-  id: string;
-  name: string;
-  email: string;
-}): Promise<void> => {
-  const token = generateOpaqueToken();
+/**
+ * Step 1 of registration: validate the details, stash them (password already
+ * hashed) under the email, and email a one-time code. No `User` row is created
+ * until the code is confirmed, so unverified accounts can never exist.
+ */
+export const requestRegistrationOtp = async (input: RegisterInput) => {
+  const email = input.email.toLowerCase();
 
-  await prisma.verificationToken.create({
-    data: {
-      userId: user.id,
-      type: VerificationTokenType.EMAIL_VERIFY,
-      tokenHash: hashToken(token),
-      expiresAt: new Date(Date.now() + EMAIL_VERIFY_TTL_MS),
-    },
-  });
-
-  const { subject, html, text } = verifyEmailTemplate(user.name, token);
-  const delivered = await sendMail({ to: user.email, subject, html, text });
-
-  if (!delivered && env.NODE_ENV !== 'production') {
-    // Dev fallback: SMTP may be blocked/unconfigured locally, so surface the
-    // link in the logs instead of leaving the account unverifiable.
-    logger.warn(
-      `[auth] Verification email not delivered. Verify ${user.email} via: ` +
-        `${env.FRONTEND_URL}/verify-email?token=${token}`,
-    );
-  }
-};
-
-export const registerUser = async (input: RegisterInput, meta: SessionMeta = {}) => {
-  const existingUser = await prisma.user.findUnique({ where: { email: input.email } });
-
+  const existingUser = await prisma.user.findUnique({ where: { email } });
   if (existingUser) {
     throw new ConflictError('An account with this email already exists');
   }
 
-  const hashedPassword = await hashPassword(input.password);
+  const passwordHash = await hashPassword(input.password);
+  const otp = generateOtp();
 
-  const user = await prisma.user.create({
-    data: {
-      name: input.name,
-      email: input.email,
-      password: hashedPassword,
-      role: input.role,
-      phone: input.phone,
-    },
-    select: publicUserSelect,
+  await savePendingRegistration(email, {
+    name: input.name,
+    email,
+    passwordHash,
+    role: input.role,
+    phone: input.phone,
+    otpHash: hashToken(otp),
+    attempts: 0,
   });
 
-  await sendVerificationEmail(user);
+  const { subject, html, text } = verifyOtpTemplate(input.name, otp);
+  const delivered = await sendMail({ to: email, subject, html, text });
+
+  if (!delivered && env.NODE_ENV !== 'production') {
+    // Mail transport may be blocked/unconfigured locally, so surface the code
+    // in the logs instead of leaving the registration unfinishable.
+    logger.warn(`[auth] Verification OTP email not delivered. Code for ${email}: ${otp}`);
+  }
+
+  await setResendCooldown(email);
+
+  return { email, devOtp: env.NODE_ENV !== 'production' ? otp : undefined };
+};
+
+export const verifyRegistrationOtp = async (
+  emailInput: string,
+  otp: string,
+  meta: SessionMeta = {},
+) => {
+  const email = emailInput.toLowerCase();
+  const pending = await getPendingRegistration(email);
+
+  if (!pending) {
+    throw new UnauthorizedError('Verification code expired or not found. Please register again.');
+  }
+
+  if (pending.attempts >= env.OTP_MAX_ATTEMPTS) {
+    await deletePendingRegistration(email);
+    throw new UnauthorizedError('Too many incorrect attempts. Please register again.');
+  }
+
+  if (pending.otpHash !== hashToken(otp)) {
+    await savePendingRegistration(email, { ...pending, attempts: pending.attempts + 1 });
+    throw new UnauthorizedError('Incorrect verification code');
+  }
+
+  let user;
+  try {
+    user = await prisma.user.create({
+      data: {
+        name: pending.name,
+        email: pending.email,
+        password: pending.passwordHash,
+        role: pending.role,
+        phone: pending.phone,
+        emailVerifiedAt: new Date(),
+      },
+      select: publicUserSelect,
+    });
+  } catch (error) {
+    await deletePendingRegistration(email);
+    // A concurrent verify for the same email can win the unique constraint.
+    if (
+      typeof error === 'object' &&
+      error !== null &&
+      (error as { code?: string }).code === 'P2002'
+    ) {
+      throw new ConflictError('An account with this email already exists');
+    }
+    throw error;
+  }
+
+  await deletePendingRegistration(email);
 
   const { token, refreshToken } = await issueAuthTokens(user, meta);
 
@@ -127,6 +174,34 @@ export const registerUser = async (input: RegisterInput, meta: SessionMeta = {})
   });
 
   return { user, token, refreshToken };
+};
+
+export const resendRegistrationOtp = async (emailInput: string) => {
+  const email = emailInput.toLowerCase();
+  const pending = await getPendingRegistration(email);
+
+  if (!pending) {
+    throw new NotFoundError('Verification code expired or not found. Please register again.');
+  }
+
+  const cooldown = await getResendCooldown(email);
+  if (cooldown > 0) {
+    throw new TooManyRequestsError(`Please wait ${cooldown}s before requesting another code`);
+  }
+
+  const otp = generateOtp();
+  await savePendingRegistration(email, { ...pending, otpHash: hashToken(otp), attempts: 0 });
+
+  const { subject, html, text } = verifyOtpTemplate(pending.name, otp);
+  const delivered = await sendMail({ to: email, subject, html, text });
+
+  if (!delivered && env.NODE_ENV !== 'production') {
+    logger.warn(`[auth] Verification OTP email not delivered. Code for ${email}: ${otp}`);
+  }
+
+  await setResendCooldown(email);
+
+  return { email, devOtp: env.NODE_ENV !== 'production' ? otp : undefined };
 };
 
 export const loginUser = async (input: LoginInput, meta: SessionMeta = {}) => {
@@ -281,23 +356,6 @@ export const verifyEmail = async (token: string): Promise<void> => {
       data: { usedAt: new Date() },
     }),
   ]);
-};
-
-export const resendVerification = async (userId: string): Promise<void> => {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { id: true, name: true, email: true, emailVerifiedAt: true },
-  });
-
-  if (!user) {
-    throw new NotFoundError('User not found');
-  }
-
-  if (user.emailVerifiedAt) {
-    throw new ConflictError('This email address is already verified');
-  }
-
-  await sendVerificationEmail(user);
 };
 
 export const requestPasswordReset = async (email: string): Promise<void> => {

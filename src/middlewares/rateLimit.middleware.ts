@@ -1,32 +1,16 @@
 import { rateLimit } from 'express-rate-limit';
 import { RedisStore } from 'rate-limit-redis';
-import { createClient, type RedisClientType } from 'redis';
 import { env } from '../config/env';
-import { logger } from '../utils/logger';
+import { getRedisClient } from '../config/redis';
 
 /**
- * A single Redis client is shared across all rate limiters, but every limiter
- * gets its own RedisStore instance with a distinct key prefix. Reusing one
- * store object across limiters triggers express-rate-limit's
+ * Rate limiters share the app-wide Redis client from config/redis, but every
+ * limiter gets its own RedisStore instance with a distinct key prefix.
+ * Reusing one store object across limiters triggers express-rate-limit's
  * ERR_ERL_STORE_REUSE validation error, so stores are created per-limiter.
+ * When Redis isn't configured, no store is passed and express-rate-limit
+ * falls back to its in-memory store.
  */
-let redisClient: RedisClientType | null = null;
-
-const getRedisClient = (): RedisClientType | null => {
-  if (!env.REDIS_URL) return null;
-
-  if (!redisClient) {
-    const client: RedisClientType = createClient({ url: env.REDIS_URL });
-    client.on('error', (error) => logger.error('Redis rate-limit client error', { error }));
-    client
-      .connect()
-      .catch((error) => logger.error('Failed to connect Redis for rate limiting', { error }));
-    redisClient = client;
-  }
-
-  return redisClient;
-};
-
 const buildStore = (prefix: string): RedisStore | undefined => {
   const client = getRedisClient();
   if (!client) return undefined;
