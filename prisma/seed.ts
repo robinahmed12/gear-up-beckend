@@ -18,6 +18,14 @@ import { Role } from '../src/constants/roles.js';
 const ADMIN_EMAIL = 'admin@gearup.com';
 const ADMIN_PASSWORD = 'Admin@123';
 
+// Demo accounts shown on the login page. They are seeded already-verified so
+// a grader can log straight into a dashboard without an email round-trip.
+const DEMO_PASSWORD = 'Password@#12';
+const DEMO_ACCOUNTS = [
+  { name: 'Robin Customer', email: 'robin.gearup@yopmail.com', role: Role.CUSTOMER },
+  { name: 'Robin Provider', email: 'robin.gearup12@yopmail.com', role: Role.PROVIDER },
+] as const;
+
 const DEFAULT_CATEGORIES = [
   { name: 'Cycling', description: 'Bikes, helmets, and cycling accessories' },
   { name: 'Camping', description: 'Tents, sleeping bags, and camp gear' },
@@ -31,16 +39,42 @@ async function seedAdmin(): Promise<void> {
 
   const admin = await prisma.user.upsert({
     where: { email: ADMIN_EMAIL },
-    update: {},
+    update: { emailVerifiedAt: new Date() },
     create: {
       name: 'GearUp Admin',
       email: ADMIN_EMAIL,
       password: hashedPassword,
       role: Role.ADMIN,
+      emailVerifiedAt: new Date(),
     },
   });
 
   console.log('✅ Admin user ready:', admin.email);
+}
+
+async function seedDemoAccounts(): Promise<void> {
+  const hashedPassword = await bcrypt.hash(DEMO_PASSWORD, 12);
+
+  for (const account of DEMO_ACCOUNTS) {
+    const user = await prisma.user.upsert({
+      where: { email: account.email },
+      update: {
+        name: account.name,
+        password: hashedPassword,
+        role: account.role,
+        emailVerifiedAt: new Date(),
+      },
+      create: {
+        name: account.name,
+        email: account.email,
+        password: hashedPassword,
+        role: account.role,
+        emailVerifiedAt: new Date(),
+      },
+    });
+
+    console.log('✅ Demo user ready:', user.email, `(${user.role})`);
+  }
 }
 
 async function seedCategories(): Promise<void> {
@@ -57,6 +91,7 @@ async function seedCategories(): Promise<void> {
 
 async function main(): Promise<void> {
   await seedAdmin();
+  await seedDemoAccounts();
   await seedCategories();
 
   console.log('\nAdmin login:');
