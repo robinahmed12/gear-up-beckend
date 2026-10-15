@@ -10,6 +10,7 @@ import { ConflictError } from '../../errors/ConflictError';
 import { UnauthorizedError } from '../../errors/UnauthorizedError';
 import { NotFoundError } from '../../errors/NotFoundError';
 import { recordAudit } from '../../utils/auditLog';
+import { logger } from '../../utils/logger';
 import {
   RegisterInput,
   LoginInput,
@@ -80,7 +81,16 @@ const sendVerificationEmail = async (user: {
   });
 
   const { subject, html, text } = verifyEmailTemplate(user.name, token);
-  await sendMail({ to: user.email, subject, html, text });
+  const delivered = await sendMail({ to: user.email, subject, html, text });
+
+  if (!delivered && env.NODE_ENV !== 'production') {
+    // Dev fallback: SMTP may be blocked/unconfigured locally, so surface the
+    // link in the logs instead of leaving the account unverifiable.
+    logger.warn(
+      `[auth] Verification email not delivered. Verify ${user.email} via: ` +
+        `${env.FRONTEND_URL}/verify-email?token=${token}`,
+    );
+  }
 };
 
 export const registerUser = async (input: RegisterInput, meta: SessionMeta = {}) => {
@@ -308,7 +318,14 @@ export const requestPasswordReset = async (email: string): Promise<void> => {
   });
 
   const { subject, html, text } = passwordResetTemplate(user.name, token);
-  await sendMail({ to: user.email, subject, html, text });
+  const delivered = await sendMail({ to: user.email, subject, html, text });
+
+  if (!delivered && env.NODE_ENV !== 'production') {
+    logger.warn(
+      `[auth] Password reset email not delivered. Reset ${user.email} via: ` +
+        `${env.FRONTEND_URL}/reset-password?token=${token}`,
+    );
+  }
 };
 
 export const resetPassword = async (token: string, newPassword: string): Promise<void> => {

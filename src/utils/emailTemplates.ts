@@ -12,7 +12,7 @@ export const verifyEmailTemplate = (
   name: string,
   token: string,
 ): { subject: string; html: string; text: string } => {
-  const url = `${env.APP_BASE_URL}/verify-email?token=${token}`;
+  const url = `${env.FRONTEND_URL}/verify-email?token=${token}`;
   return {
     subject: 'Verify your GearUp email',
     html: layout(
@@ -31,7 +31,7 @@ export const passwordResetTemplate = (
   name: string,
   token: string,
 ): { subject: string; html: string; text: string } => {
-  const url = `${env.APP_BASE_URL}/reset-password?token=${token}`;
+  const url = `${env.FRONTEND_URL}/reset-password?token=${token}`;
   return {
     subject: 'Reset your GearUp password',
     html: layout(

@@ -63,6 +63,10 @@ const envSchema = z.object({
   SSLCOMMERZ_STORE_PASSWORD: z.string().optional(),
   SSLCOMMERZ_IS_LIVE: booleanish.default(false),
   APP_BASE_URL: z.string().default('http://localhost:5000'),
+  // Public URL of the web client. Used to build the links inside outgoing
+  // emails (verify-email, reset-password) so they open the frontend, not the
+  // API server.
+  FRONTEND_URL: z.string().default('http://localhost:3000'),
 
   // Optional — when SMTP_HOST is unset the mailer uses a JSON transport
   // that captures messages in the logs instead of sending them, so local
